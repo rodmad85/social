@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Form view para res.partner -->
+        <record id="view_partner_form_whatsapp" model="ir.ui.view">
+            <field name="name">res.partner.form.whatsapp</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='email']" position="after">
+                    <field name="mobile" string="Mobile/WhatsApp"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

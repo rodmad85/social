@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Tree view para mail.message -->
+        <record id="view_message_tree_whatsapp" model="ir.ui.view">
+            <field name="name">mail.message.tree.whatsapp</field>
+            <field name="model">mail.message</field>
+            <field name="inherit_id" ref="mail.view_message_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='subject']" position="after">
+                    <field name="whatsapp_phone" optional="hide"/>
+                    <field name="is_whatsapp" optional="show"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Form view para mail.message -->
+        <record id="view_message_form_whatsapp" model="ir.ui.view">
+            <field name="name">mail.message.form.whatsapp</field>
+            <field name="model">mail.message</field>
+            <field name="inherit_id" ref="mail.mail_message_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='body']" position="after">
+                    <group string="WhatsApp">
+                        <field name="whatsapp_phone"/>
+                        <field name="whatsapp_message_id" readonly="1"/>
+                        <field name="is_whatsapp" readonly="1"/>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
