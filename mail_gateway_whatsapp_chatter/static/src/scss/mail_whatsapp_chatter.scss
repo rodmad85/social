@@ -1,0 +1,78 @@
+.o-mail-Chatter-whatsapp.btn-primary.active {
+    background-color: #25D366;
+    border-color: #25D366;
+}
+
+.o-mail-Chatter-whatsapp .fa-whatsapp {
+    color: #25D366;
+}
+
+.o-mail-Chatter-whatsapp.btn-primary.active .fa-whatsapp {
+    color: #ffffff;
+}
+
+.o-mail-Chatter .o-mail-Message.o_whatsapp_message.o-selfAuthored {
+    flex-direction: row-reverse;
+
+    .o-mail-Message-core {
+        flex-direction: row-reverse;
+    }
+
+    .o-mail-Message-contentContainer {
+        flex-direction: row-reverse;
+    }
+
+    .o-mail-Message-sidebar {
+        justify-content: flex-end;
+    }
+
+    .o-mail-Message-header {
+        justify-content: flex-end;
+    }
+
+    .o-mail-Message-bubble {
+        border-start-end-radius: 1rem !important;
+        border-end-end-radius: 1rem !important;
+        border-start-start-radius: 0 !important;
+        border-end-start-radius: 0 !important;
+        background-color: #d9fdd3 !important;
+        border-color: #d9fdd3 !important;
+    }
+
+    .o-mail-Message-author {
+        display: none;
+    }
+}
+
+.o_whatsapp_delivery_status {
+    font-size: 0.75em;
+    margin-left: 3px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.o_whatsapp_delivery_status[data-status="sent"] .fa-check {
+    display: none;
+}
+.o_whatsapp_delivery_status:not([data-status="sent"]) .o_whatsapp_sent {
+    display: none;
+}
+
+.o_whatsapp_delivery_seen {
+    color: #53bdeb;
+}
+
+.o_whatsapp_delivery_seen .fa-check-double {
+    color: #53bdeb;
+}
+
+.o-mail-Chatter .o-mail-Message.o_whatsapp_message:not(.o-selfAuthored) {
+    .o-mail-Message-bubble {
+        border-start-start-radius: 1rem !important;
+        border-end-start-radius: 1rem !important;
+        border-start-end-radius: 0 !important;
+        border-end-end-radius: 0 !important;
+        background-color: #ffffff !important;
+        border-color: #e5e5e5 !important;
+    }
+}

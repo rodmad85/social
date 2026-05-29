@@ -1,0 +1,40 @@
+.o_whatsapp_chat.o_kanban {
+    .o_kanban_record {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    .o_kanban_record_body {
+        padding: 0 !important;
+    }
+}
+
+.o_whatsapp_bubble {
+    max-width: 75%;
+    padding: 8px 12px;
+    word-break: break-word;
+
+    &.o_whatsapp_incoming {
+        background: #f1f1f1;
+        color: #111;
+    }
+
+    &.o_whatsapp_outgoing {
+        background: #d9fdd3;
+        color: #111;
+    }
+
+    .o_whatsapp_body {
+        p {
+            margin-bottom: 0;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+    }
+}
