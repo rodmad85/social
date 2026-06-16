@@ -1,5 +1,60 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!-- Conversation View -->
+    <record model="ir.ui.view" id="mail_whatsapp_conversation_tree_view">
+        <field name="name">mail.whatsapp.conversation.tree</field>
+        <field name="model">mail.whatsapp.conversation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="display_name" string="Contato" />
+                <field name="last_message_date" string="Última mensagem" />
+                <field name="last_message_body" string="Mensagem" optional="show" />
+                <field name="message_count" string="Mensagens" optional="show" />
+                <field name="is_unassigned" string="Não atribuída" widget="boolean_fa" optional="show" />
+                <button
+                    name="action_open_channel"
+                    type="object"
+                    string="Abrir Conversa"
+                    class="btn-primary"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_conversation_search_view">
+        <field name="name">mail.whatsapp.conversation.search</field>
+        <field name="model">mail.whatsapp.conversation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="display_name" string="Contato" />
+                <filter
+                    name="filter_unassigned"
+                    string="Não Atribuídas"
+                    domain="[('is_unassigned', '=', True)]"
+                />
+                <separator />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="group_gateway"
+                        string="Gateway"
+                        context="{'group_by': 'gateway_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_conversation">
+        <field name="name">Conversas WhatsApp</field>
+        <field name="res_model">mail.whatsapp.conversation</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="mail_whatsapp_conversation_search_view" />
+        <field name="help" type="html">
+            <p>Lista de conversas WhatsApp agrupadas por contato.</p>
+        </field>
+    </record>
+
+    <!-- Individual Messages (existing, improved) -->
     <record model="ir.ui.view" id="mail_whatsapp_message_kanban_view">
         <field name="name">mail.message.whatsapp.kanban</field>
         <field name="model">mail.message</field>
@@ -16,7 +71,7 @@
                         <div t-att-class="'o_whatsapp_row d-flex mb-2 px-3 ' + (record.is_whatsapp_incoming.raw_value ? 'justify-content-start' : 'justify-content-end')">
                             <div t-att-class="'o_whatsapp_bubble ' + (record.is_whatsapp_incoming.raw_value ? 'o_whatsapp_incoming rounded-end-3 rounded-bottom-3' : 'o_whatsapp_outgoing rounded-start-3 rounded-bottom-3')">
                                 <div class="o_whatsapp_header d-flex align-items-center gap-2 mb-1">
-                                    <img t-att-src="kanban_image('res.partner', 'avatar_128', record.author_id.raw_value)"
+                                    <img t-att-src="record.author_id.raw_value ? ('/web/image/res.partner/' + record.author_id.raw_value + '/avatar_128') : ''"
                                          class="rounded-circle flex-shrink-0"
                                          width="24" height="24" alt="Avatar"
                                          t-att-style="record.author_id.raw_value ? '' : 'display: none;'"/>
@@ -141,13 +196,16 @@
     </record>
 
     <record model="ir.actions.act_window" id="action_mail_whatsapp_message">
-        <field name="name">WhatsApp Messages</field>
+        <field name="name">Mensagens WhatsApp</field>
         <field name="res_model">mail.message</field>
         <field name="view_mode">kanban,list,form,pivot</field>
         <field name="search_view_id" ref="mail_whatsapp_message_search_view" />
         <field name="domain">[('gateway_type', '=', 'whatsapp')]</field>
+        <field name="context">{
+            "search_default_group_contact": True,
+        }</field>
         <field name="help" type="html">
-            <p>List of WhatsApp messages sent and received through the gateway.</p>
+            <p>Lista de mensagens WhatsApp enviadas e recebidas através do gateway.</p>
         </field>
     </record>
 
@@ -164,6 +222,7 @@
         </field>
     </record>
 
+    <!-- Menu items -->
     <menuitem
         id="menu_mail_whatsapp_messages_root"
         name="WhatsApp"
@@ -171,8 +230,15 @@
         sequence="50"
     />
     <menuitem
+        id="menu_mail_whatsapp_conversations"
+        name="Conversas"
+        parent="menu_mail_whatsapp_messages_root"
+        action="action_mail_whatsapp_conversation"
+        sequence="5"
+    />
+    <menuitem
         id="menu_mail_whatsapp_messages_list"
-        name="Messages"
+        name="Mensagens"
         parent="menu_mail_whatsapp_messages_root"
         action="action_mail_whatsapp_message"
         sequence="10"

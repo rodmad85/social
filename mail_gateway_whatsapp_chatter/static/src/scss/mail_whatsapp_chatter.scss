@@ -11,23 +11,27 @@
     color: #ffffff;
 }
 
+/* Self-authored WhatsApp messages — right-aligned */
 .o-mail-Chatter .o-mail-Message.o_whatsapp_message.o-selfAuthored {
-    flex-direction: row-reverse;
-
-    .o-mail-Message-core {
-        flex-direction: row-reverse;
-    }
-
-    .o-mail-Message-contentContainer {
-        flex-direction: row-reverse;
-    }
-
     .o-mail-Message-sidebar {
-        justify-content: flex-end;
+        display: none;
+    }
+
+    .w-100.o-min-width-0 {
+        margin-left: auto;
+        width: auto;
+        max-width: 80%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
     }
 
     .o-mail-Message-header {
         justify-content: flex-end;
+    }
+
+    .o-mail-Message-author {
+        display: none;
     }
 
     .o-mail-Message-bubble {
@@ -39,33 +43,12 @@
         border-color: #d9fdd3 !important;
     }
 
-    .o-mail-Message-author {
-        display: none;
+    .o_whatsapp_delivery_status {
+        justify-content: flex-end;
     }
 }
 
-.o_whatsapp_delivery_status {
-    font-size: 0.75em;
-    margin-left: 3px;
-    display: inline-flex;
-    align-items: center;
-}
-
-.o_whatsapp_delivery_status[data-status="sent"] .fa-check {
-    display: none;
-}
-.o_whatsapp_delivery_status:not([data-status="sent"]) .o_whatsapp_sent {
-    display: none;
-}
-
-.o_whatsapp_delivery_seen {
-    color: #53bdeb;
-}
-
-.o_whatsapp_delivery_seen .fa-check-double {
-    color: #53bdeb;
-}
-
+/* Received WhatsApp messages — left-aligned */
 .o-mail-Chatter .o-mail-Message.o_whatsapp_message:not(.o-selfAuthored) {
     .o-mail-Message-bubble {
         border-start-start-radius: 1rem !important;
@@ -75,4 +58,18 @@
         background-color: #ffffff !important;
         border-color: #e5e5e5 !important;
     }
+}
+
+.o_whatsapp_delivery_status {
+    font-size: 0.75em;
+    display: inline-flex;
+    align-items: center;
+}
+
+.o_whatsapp_delivery_seen {
+    color: #53bdeb;
+}
+
+.o_whatsapp_delivery_seen .fa-check-double {
+    color: #53bdeb;
 }

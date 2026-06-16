@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mail_message_whatsapp_user,mail.message.whatsapp.user,mail.model_mail_message,mail_gateway.gateway_user,1,0,0,0
 access_mail_message_whatsapp_admin,mail.message.whatsapp.admin,mail.model_mail_message,base.group_system,1,0,0,0
+access_mail_whatsapp_conversation_user,mail.whatsapp.conversation.user,model_mail_whatsapp_conversation,mail_gateway.gateway_user,1,0,0,0
+access_mail_whatsapp_conversation_admin,mail.whatsapp.conversation.admin,model_mail_whatsapp_conversation,base.group_system,1,0,0,0
