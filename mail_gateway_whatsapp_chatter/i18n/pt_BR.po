@@ -1,0 +1,31 @@
+# Brazilian Portuguese translation for Mail WhatsApp Gateway Chatter
+# Copyright (C) 2024 Odoo Community Association (OCA)
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: mail_gateway_whatsapp_chatter
+#: model:ir.model.fields,field_description:mail_gateway_whatsapp_chatter.field_mail_message__is_whatsapp_incoming
+msgid "Incoming WhatsApp"
+msgstr "WhatsApp recebido"
+
+#. module: mail_gateway_whatsapp_chatter
+#: code:addons/mail_gateway_whatsapp_chatter/static/src/xml/whatsapp_gateway_follower.xml:0
+msgid "Select template..."
+msgstr "Selecionar modelo..."
+
+#. module: mail_gateway_whatsapp_chatter
+#: code:addons/mail_gateway_whatsapp_chatter/static/src/xml/whatsapp_gateway_button_patch.xml:0
+msgid "Send"
+msgstr "Enviar"

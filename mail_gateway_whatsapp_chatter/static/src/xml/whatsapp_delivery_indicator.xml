@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Message" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Message-header')]" position="after">
+            <span
+                t-if="message.gateway_type === 'whatsapp' and message.isSelfAuthored"
+                class="o_whatsapp_delivery_status"
+            >
+                <span t-if="message.hasSomeoneSeen" style="color: #53bdeb">✓✓</span>
+                <span t-if="!message.hasSomeoneSeen and message.whatsapp_notification_status === 'sent'" class="text-muted">✓✓</span>
+                <span t-if="!message.hasSomeoneSeen and (message.whatsapp_notification_status === 'bounce' or message.whatsapp_notification_status === 'exception')" class="text-danger">✗</span>
+                <span t-if="!message.hasSomeoneSeen and !message.whatsapp_notification_status" class="text-muted">✓</span>
+            </span>
+        </xpath>
+    </t>
+</templates>

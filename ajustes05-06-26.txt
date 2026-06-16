@@ -1,0 +1,151 @@
+AJUSTES - MÓDULO mail_gateway_adjustments_20250605
+=====================================================
+Data: 05/06/2026
+
+PLANO FINAL
+-----------
+
+Objetivo: Tornar as conversas WhatsApp privadas, onde cada canal é visível
+apenas para o usuário interno designado + contato externo, em vez de
+transmitir para todos os membros do gateway.
+
+ARQUIVOS DO MÓDULO
+------------------
+
+mail_gateway_adjustments_20250605/
+├── __init__.py
+├── __manifest__.py
+├── models/
+│   ├── __init__.py
+│   ├── mail_gateway_abstract.py
+│   ├── ir_websocket.py
+│   └── discuss_channel.py
+├── views/
+│   └── unassigned_channel_views.xml
+└── security/
+    └── ir.model.access.csv
+
+MUDANÇAS REALIZADAS
+-------------------
+
+1. mail_gateway_adjustments_20250605/models/mail_gateway_abstract.py
+   ─────────────────────────────────────────────────────────────────
+   _get_channel_vals() - Removida a adição automática de todos os
+   gateway.member_ids como channel_member_ids. O canal agora é criado
+   apenas com o autor externo (contato WhatsApp).
+
+   _get_channel() - Removido o _broadcast() para membros internos, já
+   que não há mais membros internos no canal recém-criado.
+
+2. mail_gateway_adjustments_20250605/models/ir_websocket.py
+   ─────────────────────────────────────────────────────────
+   _build_bus_channel_list() - Removida a inscrição automática em TODOS
+   os canais gateway. Agora inscreve apenas nos canais onde o usuário
+   é membro (channel_member_ids.partner_id = user.partner_id).
+
+3. mail_gateway_adjustments_20250605/models/discuss_channel.py
+   ───────────────────────────────────────────────────────────
+   is_unassigned (Boolean, stored computed field):
+     True quando o canal é do tipo 'gateway' e NENHUM membro do canal
+     possui user_ids vinculado (ou seja, nenhum usuário interno é membro).
+
+   action_claim():
+     Adiciona o usuário atual como channel_member do canal (com sudo())
+     e redireciona para a interface Discuss.
+
+   message_post():
+     Ao postar uma mensagem num canal gateway, verifica se o usuário
+     atual já é membro. Se não for, adiciona-o automaticamente como
+     channel_member (com sudo()). Isso cobre:
+       - Usuário respondendo a uma conversa "não atribuída"
+       - Usuário enviando WhatsApp via composer para contato existente
+
+4. mail_gateway_adjustments_20250605/views/unassigned_channel_views.xml
+   ────────────────────────────────────────────────────────────────────
+   - Tree view de discuss.channel filtrando por is_unassigned = True
+   - Colunas: name (contato), gateway_channel_token (telefone), gateway_id
+   - Botão "Assumir Conversa" que chama action_claim()
+   - Menu "Não Atribuídas" dentro do menu Gateway
+
+5. mail_gateway_adjustments_20250605/security/ir.model.access.csv
+   ──────────────────────────────────────────────────────────────
+   - ACL de leitura para gateway_user acessar discuss.channel
+
+FLUXO FINAL
+-----------
+
+OUTGOING (Usuário interno envia WhatsApp via composer):
+┌─────────────────────────────────────────────────────────┐
+│ 1. Usuário abre composer e envia mensagem               │
+│ 2. _whatsapp_get_channel() busca ou cria o canal         │
+│ 3. Canal NOVO: criado apenas com contato externo         │
+│ 4. Canal EXISTENTE: retornado como está                  │
+│ 5. message_post() é chamado → verifica se usuário é      │
+│    membro. Se não for, adiciona-o como channel_member.   │
+│ 6. Mensagem enviada via WhatsApp API                     │
+│ 7. Apenas o remetente vê a conversa no Discuss           │
+└─────────────────────────────────────────────────────────┘
+
+INCOMING (Contato externo envia WhatsApp):
+┌─────────────────────────────────────────────────────────┐
+│ 1. Webhook recebe a mensagem                             │
+│ 2. _get_channel() cria NOVO canal                        │
+│ 3. Canal criado SEM membros internos                     │
+│    (apenas o contato externo como member)                │
+│ 4. Canal aparece na lista "Não Atribuídas"               │
+│    (filtro: is_unassigned = True)                        │
+│ 5. Nenhum usuário interno recebe notificação em tempo    │
+│    real (ir_websocket só inscreve nos canais do usuário) │
+│ 6. Gateway users veem a lista e podem clicar             │
+│    em "Assumir Conversa"                                 │
+└─────────────────────────────────────────────────────────┘
+
+USUÁRIO ASSUME CONVERSA:
+┌─────────────────────────────────────────────────────────┐
+│ 1. Usuário clica em "Assumir Conversa" na tree view     │
+│ 2. action_claim() adiciona usuário como channel_member  │
+│ 3. is_unassigned passa a ser False                      │
+│ 4. Redirecionado para o Discuss com o canal aberto      │
+│ 5. A partir daqui, apenas esse usuário vê a conversa    │
+│    no sidebar do Discuss                                │
+│ 6. Outros usuários não veem mais na lista               │
+└─────────────────────────────────────────────────────────┘
+
+USUÁRIO RESPONDE INCOMING DIRETAMENTE:
+┌─────────────────────────────────────────────────────────┐
+│ 1. Usuário abre canal não atribuído (sabe o ID ou       │
+│    acessa por outro meio)                                │
+│ 2. Posta uma mensagem → message_post() detecta que      │
+│    não é membro e adiciona automaticamente               │
+│ 3. is_unassigned passa a ser False                      │
+│ 4. Mensagem enviada via WhatsApp API                    │
+│ 5. Conversa agora aparece no sidebar do usuário         │
+└─────────────────────────────────────────────────────────┘
+
+SEGUNDO USUÁRIO RESPONDE:
+┌─────────────────────────────────────────────────────────┐
+│ 1. Se a conversa já está atribuída ao Usuário A         │
+│ 2. Usuário B também envia mensagem                      │
+│ 3. message_post() adiciona Usuário B como member        │
+│ 4. Ambos passam a ver a conversa                        │
+└─────────────────────────────────────────────────────────┘
+
+COMPARAÇÃO: ANTES vs DEPOIS
+----------------------------
+
+ANTES:
+- Todos os gateway.member_ids eram adicionados como membros
+  de TODO canal criado
+- Todos recebiam notificações em tempo real (bus) de TODOS
+  os canais gateway
+- Todas as conversas eram visíveis para todos os membros
+  do gateway
+
+DEPOIS:
+- Canais novos são criados SEM membros internos (apenas
+  o contato externo)
+- Usuário só recebe notificações dos canais onde é membro
+- Conversas incoming ficam em lista "Não Atribuídas"
+- Primeiro usuário que clica em "Assumir" ou responde
+  torna-se o único membro interno (até que outro também
+  responda)

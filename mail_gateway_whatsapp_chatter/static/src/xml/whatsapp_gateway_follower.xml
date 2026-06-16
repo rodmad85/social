@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail_gateway.GatewayFollowerView" t-inherit-mode="extension">
+        <xpath expr="//select[@name='gatewayChannel']" position="replace">
+            <select
+                name="whatsappTemplate"
+                class="o_whatsapp_template_selector form-select form-select-sm d-inline-block w-auto"
+                t-on-change="onChangeTemplate"
+            >
+                <option value="">Select template...</option>
+                <option
+                    t-foreach="state.templates"
+                    t-as="template"
+                    t-key="template.id"
+                    t-att-value="template.id"
+                    t-esc="template.name"
+                />
+            </select>
+        </xpath>
+    </t>
+</templates>
