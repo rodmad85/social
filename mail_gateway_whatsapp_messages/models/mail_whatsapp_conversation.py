@@ -41,9 +41,34 @@ class MailWhatsappConversation(models.Model):
     last_message_date = fields.Datetime(string="Última mensagem", readonly=True)
     last_message_body = fields.Text(string="Última mensagem", readonly=True)
     message_count = fields.Integer(string="Quantidade", readonly=True)
+    phone = fields.Char(string="Telefone", readonly=True)
     is_unassigned = fields.Boolean(string="Não atribuída", readonly=True)
     partner_user_id = fields.Many2one("res.users", string="Usuário", readonly=True)
     display_name = fields.Char(string="Contato", readonly=True)
+
+    def action_auto_assign_by_phone(self):
+        self.env.cr.execute("""
+            INSERT INTO discuss_channel_member (partner_id, channel_id, is_pinned, unpin_dt)
+            SELECT ru.partner_id, dc.id, False, NULL
+            FROM discuss_channel dc
+            JOIN res_partner rp ON rp.phone = dc.gateway_channel_token
+                OR rp.mobile = dc.gateway_channel_token
+            JOIN res_users ru ON ru.id = rp.user_id AND ru.active = True
+            WHERE dc.channel_type = 'gateway'
+              AND dc.gateway_channel_token IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM discuss_channel_member dcm
+                  JOIN res_users ru2 ON ru2.partner_id = dcm.partner_id
+                  WHERE dcm.channel_id = dc.id AND ru2.active = True
+              )
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM discuss_channel_member dcm
+                  WHERE dcm.channel_id = dc.id AND dcm.partner_id = ru.partner_id
+              )
+        """)
+        return {"type": "ir.actions.act_window_close"}
 
     def action_assign_wizard(self):
         return {
@@ -110,7 +135,8 @@ class MailWhatsappConversation(models.Model):
                     lm.last_message_date,
                     lm.last_message_body,
                     COALESCE(mc.msg_count, 0) AS message_count,
-                    rp.user_id AS partner_user_id,
+                    dc.gateway_channel_token AS phone,
+                    COALESCE(rp_match.user_id, rp.user_id) AS partner_user_id,
                     CASE WHEN NOT EXISTS (
                         SELECT 1
                         FROM discuss_channel_member dcm
@@ -119,11 +145,11 @@ class MailWhatsappConversation(models.Model):
                           AND ru.active = True
                         LIMIT 1
                     ) AND (
-                        rp.user_id IS NULL
+                        COALESCE(rp_match.user_id, rp.user_id) IS NULL
                         OR NOT EXISTS (
                             SELECT 1
                             FROM res_users ru
-                            WHERE ru.id = rp.user_id
+                            WHERE ru.id = COALESCE(rp_match.user_id, rp.user_id)
                               AND ru.active = True
                             LIMIT 1
                         )
@@ -133,5 +159,14 @@ class MailWhatsappConversation(models.Model):
                 JOIN discuss_channel dc ON dc.id = lm.channel_id
                 LEFT JOIN res_partner rp ON rp.id = lm.author_id
                 LEFT JOIN message_counts mc ON mc.channel_id = lm.channel_id
+                LEFT JOIN LATERAL (
+                    SELECT rp2.user_id
+                    FROM res_partner rp2
+                    WHERE dc.gateway_channel_token IS NOT NULL
+                      AND (rp2.phone = dc.gateway_channel_token OR rp2.mobile = dc.gateway_channel_token)
+                      AND rp2.user_id IS NOT NULL
+                    LIMIT 1
+                ) rp_match ON TRUE
             )
         """)
+        self.action_auto_assign_by_phone()

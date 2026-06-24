@@ -10,6 +10,7 @@
                 <field name="last_message_date" string="Última mensagem" />
                 <field name="last_message_body" string="Mensagem" optional="show" />
                 <field name="message_count" string="Mensagens" optional="show" />
+                <field name="phone" string="Telefone" optional="show" />
                 <field name="partner_user_id" string="Usuário" optional="show" />
                 <field name="is_unassigned" string="Não atribuída" widget="boolean_fa" optional="show" />
                 <button
@@ -17,6 +18,13 @@
                     type="object"
                     string="Abrir Conversa"
                     class="btn-primary"
+                />
+                <button
+                    name="action_auto_assign_by_phone"
+                    type="object"
+                    string="Buscar Contato"
+                    class="btn-info"
+                    invisible="not is_unassigned"
                 />
                 <button
                     name="action_assign_wizard"
