@@ -7,7 +7,7 @@
                 class="o_whatsapp_template_selector form-select form-select-sm d-inline-block w-auto"
                 t-on-change="onChangeTemplate"
             >
-                <option value="">Select template...</option>
+                <option value="">Selecionar modelo...</option>
                 <option
                     t-foreach="state.templates"
                     t-as="template"

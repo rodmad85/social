@@ -20,9 +20,20 @@ class MailWhatsappConversation(models.Model):
     def action_open_channel(self):
         self.ensure_one()
         return {
-            "type": "ir.actions.client",
-            "tag": "mail.action_discuss",
-            "params": {"active_id": f"discuss.channel_{self.channel_id.id}"},
+            "type": "ir.actions.act_window",
+            "name": "Mensagens",
+            "res_model": "mail.message",
+            "view_mode": "kanban",
+            "views": [(self.env.ref("mail_gateway_whatsapp_messages.mail_whatsapp_message_kanban_view").id, "kanban")],
+            "domain": [
+                ("model", "=", "discuss.channel"),
+                ("res_id", "=", self.channel_id.id),
+                ("gateway_type", "=", "whatsapp"),
+            ],
+            "context": dict(
+                self.env.context,
+                search_default_group_contact=False,
+            ),
         }
 
     def init(self):
@@ -66,6 +77,15 @@ class MailWhatsappConversation(models.Model):
                         WHERE dcm.channel_id = lm.channel_id
                           AND ru.active = True
                         LIMIT 1
+                    ) AND (
+                        rp.user_id IS NULL
+                        OR NOT EXISTS (
+                            SELECT 1
+                            FROM res_users ru
+                            WHERE ru.id = rp.user_id
+                              AND ru.active = True
+                            LIMIT 1
+                        )
                     ) THEN TRUE ELSE FALSE END AS is_unassigned,
                     COALESCE(rp.name, dc.name, 'WhatsApp') AS display_name
                 FROM latest_messages lm

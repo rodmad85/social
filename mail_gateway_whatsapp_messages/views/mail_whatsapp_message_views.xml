@@ -48,9 +48,21 @@
         <field name="name">Conversas WhatsApp</field>
         <field name="res_model">mail.whatsapp.conversation</field>
         <field name="view_mode">list</field>
+        <field name="domain">[('is_unassigned', '=', False)]</field>
         <field name="search_view_id" ref="mail_whatsapp_conversation_search_view" />
         <field name="help" type="html">
             <p>Lista de conversas WhatsApp agrupadas por contato.</p>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_conversation_unassigned">
+        <field name="name">Conversas Não Atribuídas</field>
+        <field name="res_model">mail.whatsapp.conversation</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('is_unassigned', '=', True)]</field>
+        <field name="search_view_id" ref="mail_whatsapp_conversation_search_view" />
+        <field name="help" type="html">
+            <p>Lista de conversas WhatsApp sem usuário atribuído.</p>
         </field>
     </record>
 
@@ -237,10 +249,11 @@
         sequence="5"
     />
     <menuitem
-        id="menu_mail_whatsapp_messages_list"
-        name="Mensagens"
+        id="menu_mail_whatsapp_conversations_unassigned"
+        name="Não Atribuídas"
         parent="menu_mail_whatsapp_messages_root"
-        action="action_mail_whatsapp_message"
-        sequence="10"
+        action="action_mail_whatsapp_conversation_unassigned"
+        sequence="6"
     />
+
 </odoo>

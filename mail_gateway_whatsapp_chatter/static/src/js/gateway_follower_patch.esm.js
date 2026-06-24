@@ -6,7 +6,7 @@ import {useService} from "@web/core/utils/hooks";
 patch(GatewayFollower.prototype, {
     setup() {
         super.setup(...arguments);
-        this.state = useState({templates: []});
+        this.state = useState({templates: [], selectedTemplateId: false});
         this.orm = useService("orm");
         onMounted(async () => {
             await this._loadTemplates();
@@ -35,10 +35,29 @@ patch(GatewayFollower.prototype, {
     },
     onChangeTemplate(ev) {
         const templateId = parseInt(ev.target.value, 10);
+        this.state.selectedTemplateId = templateId;
+        const notifIndex = this.props.composer.thread.gateway_notifications.findIndex(
+            (n) => n.gateway_channel_id === this.channel
+        );
+        if (notifIndex !== -1) {
+            this.props.composer.thread.gateway_notifications[notifIndex].whatsapp_template_id =
+                templateId || false;
+        }
         if (!templateId) return;
         const template = this.state.templates.find((t) => t.id === templateId);
         if (template) {
             this.props.composer.text = template.body;
         }
+    },
+    _getMessageData() {
+        const data = {
+            partner_id: this.props.follower.id,
+            channel_type: "gateway",
+            gateway_channel_id: this.channel,
+        };
+        if (this.state.selectedTemplateId) {
+            data.whatsapp_template_id = this.state.selectedTemplateId;
+        }
+        return data;
     },
 });

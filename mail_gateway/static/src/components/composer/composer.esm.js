@@ -6,7 +6,7 @@ import {prettifyMessageContent} from "@mail/utils/common/format";
 patch(Composer.prototype, {
     get SEND_TEXT() {
         if (this.props.type === "gateway" && !this.props.composer.message) {
-            return _t("Send gateway");
+            return _t("Send");
         }
         return super.SEND_TEXT;
     },

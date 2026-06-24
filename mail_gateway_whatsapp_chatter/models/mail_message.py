@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 
 class MailMessage(models.Model):
@@ -46,6 +47,12 @@ class MailMessage(models.Model):
                 self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
         return result
 
+    def _get_gateway_thread_message_vals(self):
+        vals = super()._get_gateway_thread_message_vals()
+        if self.env.context.get("whatsapp_template_id"):
+            vals["whatsapp_template_id"] = self.env.context["whatsapp_template_id"]
+        return vals
+
 
 class MailThread(models.AbstractModel):
     _inherit = "mail.thread"
@@ -63,6 +70,56 @@ class MailThread(models.AbstractModel):
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
         return partners.filtered("gateway_channel_ids")
+
+    def _whatsapp_get_channel(self, field_name, gateway):
+        sanitized_number = self._phone_format(number=self[field_name])
+        if not sanitized_number:
+            raise UserError(self.env._("Phone cannot be sanitized"))
+        sanitized_number = sanitized_number.replace("+", "")
+        partner = self._whatsapp_get_partner()
+        existing = self.env["res.partner.gateway.channel"].search(
+            [
+                ("partner_id", "=", partner.id),
+                ("gateway_id", "=", gateway.id),
+            ],
+            limit=1,
+        )
+        if existing:
+            if existing.gateway_token != sanitized_number:
+                existing.gateway_token = sanitized_number
+        else:
+            self.env["res.partner.gateway.channel"].create(
+                {
+                    "name": gateway.name,
+                    "partner_id": partner.id,
+                    "gateway_id": gateway.id,
+                    "gateway_token": sanitized_number,
+                }
+            )
+        return self.env["mail.gateway.whatsapp"]._get_channel(
+            gateway,
+            sanitized_number,
+            {
+                "contacts": [
+                    {
+                        "wa_id": sanitized_number,
+                        "profile": {"name": partner.display_name},
+                    }
+                ],
+                "messages": [{"from": sanitized_number}],
+            },
+            force_create=True,
+        )
+
+    def _notify_thread_by_gateway(self, message, partners_data, **kwargs):
+        gateway_notifications = kwargs.get("gateway_notifications", [])
+        for notif in gateway_notifications:
+            if notif.get("whatsapp_template_id"):
+                message = message.with_context(
+                    whatsapp_template_id=notif["whatsapp_template_id"]
+                )
+                break
+        return super()._notify_thread_by_gateway(message, partners_data, **kwargs)
 
     def _thread_to_store(self, store, /, *, fields=None, request_list=None):
         res = super()._thread_to_store(store, fields=fields, request_list=request_list)
