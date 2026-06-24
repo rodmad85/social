@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="whatsapp_assign_conversation_wizard_form_view">
+        <field name="name">whatsapp.assign.conversation.wizard.form</field>
+        <field name="model">whatsapp.assign.conversation.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="conversation_ids" invisible="1" />
+                    <field name="user_id" />
+                </group>
+                <footer>
+                    <button
+                        name="action_assign"
+                        type="object"
+                        string="Atribuir"
+                        class="btn-primary"
+                    />
+                    <button
+                        string="Cancelar"
+                        class="btn-secondary"
+                        special="cancel"
+                    />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_whatsapp_assign_conversation_wizard">
+        <field name="name">Atribuir Conversa</field>
+        <field name="res_model">whatsapp.assign.conversation.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
