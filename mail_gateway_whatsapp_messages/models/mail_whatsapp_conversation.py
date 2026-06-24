@@ -17,6 +17,18 @@ class MailWhatsappConversation(models.Model):
     is_unassigned = fields.Boolean(string="Não atribuída", readonly=True)
     display_name = fields.Char(string="Contato", readonly=True)
 
+    def action_assign_wizard(self):
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Atribuir Conversa",
+            "res_model": "whatsapp.assign.conversation.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_conversation_ids": [(6, 0, self.ids)],
+            },
+        }
+
     def action_open_channel(self):
         self.ensure_one()
         return {

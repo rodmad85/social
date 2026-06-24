@@ -17,6 +17,13 @@
                     string="Abrir Conversa"
                     class="btn-primary"
                 />
+                <button
+                    name="action_assign_wizard"
+                    type="object"
+                    string="Atribuir"
+                    class="btn-success"
+                    invisible="not is_unassigned"
+                />
             </list>
         </field>
     </record>
@@ -255,5 +262,4 @@
         action="action_mail_whatsapp_conversation_unassigned"
         sequence="6"
     />
-
 </odoo>

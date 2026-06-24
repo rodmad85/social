@@ -9,6 +9,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/mail_whatsapp_message_views.xml",
+        "wizard/whatsapp_assign_conversation_views.xml",
     ],
     "assets": {
         "web.assets_backend": [
