@@ -1,6 +1,33 @@
 from odoo import api, fields, models, tools
 
 
+class WhatsappAssignConversationWizard(models.TransientModel):
+    _name = "whatsapp.assign.conversation.wizard"
+    _description = "Assign WhatsApp Conversations"
+
+    user_id = fields.Many2one("res.users", string="Usuário", required=True)
+    conversation_ids = fields.Many2many(
+        "mail.whatsapp.conversation", string="Conversas"
+    )
+
+    def action_assign(self):
+        self.ensure_one()
+        for conversation in self.conversation_ids:
+            channel = conversation.channel_id
+            channel_member = self.env["discuss.channel.member"]
+            if not any(
+                m.partner_id == self.user_id.partner_id
+                for m in channel.channel_member_ids
+            ):
+                channel_member.sudo().create({
+                    "partner_id": self.user_id.partner_id.id,
+                    "channel_id": channel.id,
+                    "is_pinned": False,
+                    "unpin_dt": False,
+                })
+        return {"type": "ir.actions.act_window_close"}
+
+
 class MailWhatsappConversation(models.Model):
     _name = "mail.whatsapp.conversation"
     _description = "WhatsApp Conversation grouped by contact"
