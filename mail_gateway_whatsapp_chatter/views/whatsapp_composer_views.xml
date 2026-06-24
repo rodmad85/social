@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="whatsapp_composer_form_view_inject">
+        <field name="name">whatsapp.composer.form (inject template domain)</field>
+        <field name="model">whatsapp.composer</field>
+        <field name="inherit_id" ref="mail_gateway_whatsapp.whatsapp_composer_form_view"/>
+        <field name="arch" type="xml">
+            <field name="template_id" position="attributes">
+                <attribute name="domain">[('gateway_id', '=', gateway_id), ('state', '=', 'approved'), ('is_supported', '=', True), '|', ('model', '=', res_model), ('model', '=', 'res.partner')]</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

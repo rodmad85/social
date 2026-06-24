@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="mail_gateway.discuss_channel_gateway_rule" model="ir.rule">
+        <field name="name">discuss.channel: access gateway (restricted)</field>
+        <field name="model_id" ref="mail.model_discuss_channel" />
+        <field name="groups" eval="[(4, ref('mail_gateway.gateway_user'))]" />
+        <field name="domain_force">[('channel_type', '=', 'gateway'), ('channel_member_ids.partner_id', '=', user.partner_id.id)]</field>
+        <field name="perm_read" eval="True" />
+        <field name="perm_create" eval="False" />
+        <field name="perm_write" eval="True" />
+        <field name="perm_unlink" eval="False" />
+    </record>
+</odoo>
