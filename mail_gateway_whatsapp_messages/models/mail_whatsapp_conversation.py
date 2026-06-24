@@ -48,8 +48,8 @@ class MailWhatsappConversation(models.Model):
 
     def action_auto_assign_by_phone(self):
         self.env.cr.execute("""
-            INSERT INTO discuss_channel_member (partner_id, channel_id, is_pinned, unpin_dt)
-            SELECT ru.partner_id, dc.id, False, NULL
+            INSERT INTO discuss_channel_member (partner_id, channel_id)
+            SELECT ru.partner_id, dc.id
             FROM discuss_channel dc
             JOIN res_partner rp ON rp.phone = dc.gateway_channel_token
                 OR rp.mobile = dc.gateway_channel_token
