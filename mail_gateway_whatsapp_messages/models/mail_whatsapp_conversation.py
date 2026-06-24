@@ -7,7 +7,7 @@ class WhatsappAssignConversationWizard(models.TransientModel):
 
     user_id = fields.Many2one("res.users", string="Usuário", required=True)
     conversation_ids = fields.Many2many(
-        "mail.whatsapp.conversation", string="Conversas"
+        "mail.whatsapp.conversation", "whatsapp_assign_conv_rel", string="Conversas"
     )
 
     def action_assign(self):
