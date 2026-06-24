@@ -42,6 +42,7 @@ class MailWhatsappConversation(models.Model):
     last_message_body = fields.Text(string="Última mensagem", readonly=True)
     message_count = fields.Integer(string="Quantidade", readonly=True)
     is_unassigned = fields.Boolean(string="Não atribuída", readonly=True)
+    partner_user_id = fields.Many2one("res.users", string="Usuário", readonly=True)
     display_name = fields.Char(string="Contato", readonly=True)
 
     def action_assign_wizard(self):
@@ -109,6 +110,7 @@ class MailWhatsappConversation(models.Model):
                     lm.last_message_date,
                     lm.last_message_body,
                     COALESCE(mc.msg_count, 0) AS message_count,
+                    rp.user_id AS partner_user_id,
                     CASE WHEN NOT EXISTS (
                         SELECT 1
                         FROM discuss_channel_member dcm

@@ -10,6 +10,7 @@
                 <field name="last_message_date" string="Última mensagem" />
                 <field name="last_message_body" string="Mensagem" optional="show" />
                 <field name="message_count" string="Mensagens" optional="show" />
+                <field name="partner_user_id" string="Usuário" optional="show" />
                 <field name="is_unassigned" string="Não atribuída" widget="boolean_fa" optional="show" />
                 <button
                     name="action_open_channel"
