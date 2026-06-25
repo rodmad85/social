@@ -65,10 +65,4 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 )
 
     def _post_process_message(self, message, channel):
-        result = super()._post_process_message(message, channel)
-        if channel.gateway_id and channel.gateway_id.gateway_type == "whatsapp":
-            author = message.author_id
-            self._post_to_linked_threads(
-                message.body, message.attachment_ids.ids, author, channel
-            )
-        return result
+        return super()._post_process_message(message, channel)
