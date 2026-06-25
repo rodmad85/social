@@ -124,6 +124,7 @@
         <field name="model">mail.message</field>
         <field name="arch" type="xml">
             <list default_order="date desc" class="o_whatsapp_chat_list" decoration-info="is_whatsapp_incoming" decoration-success="not is_whatsapp_incoming">
+                <field name="gateway_type" invisible="1" />
                 <field name="is_whatsapp_incoming" invisible="1" />
                 <field name="date" optional="hide" />
                 <field name="author_id" />

@@ -40,12 +40,25 @@
 }
 
 .o_whatsapp_chat_list.o_list_view {
-    tr.text-info {
-        background-color: #f1f1f1;
-        color: #111;
+    tr {
+        td {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            vertical-align: top;
+            border: none;
+        }
+        td:last-child p {
+            margin-bottom: 0;
+        }
     }
-    tr.text-success {
-        background-color: #d9fdd3;
-        color: #111;
+    tr.text-info,
+    tr.text-info td {
+        background-color: #f1f1f1 !important;
+        color: #111 !important;
+    }
+    tr.text-success,
+    tr.text-success td {
+        background-color: #d9fdd3 !important;
+        color: #111 !important;
     }
 }
