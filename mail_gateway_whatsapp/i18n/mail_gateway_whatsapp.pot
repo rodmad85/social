@@ -14,6 +14,24 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "An error occurred when sending a WhatsApp message"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "An error occurred when sending a WhatsApp message on \"%(record_name)s\""
+msgstr ""
+
+#. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "WhatsApp"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
 #: model_terms:ir.ui.view,arch_db:mail_gateway_whatsapp.mail_gateway_form_view
 msgid ""
 "<span>Define the values of the fields <b>Webhook Key</b> and <b>Whatsapp Security Key</b>.\n"

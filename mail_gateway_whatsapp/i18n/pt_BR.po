@@ -17,6 +17,24 @@ msgstr ""
 "X-Generator: Weblate 5.15.2\n"
 
 #. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "An error occurred when sending a WhatsApp message"
+msgstr "Erro no envio de mensagem do whatsapp"
+
+#. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "An error occurred when sending a WhatsApp message on \"%(record_name)s\""
+msgstr "Erro no envio de mensagem do whatsapp em \"%(record_name)s\""
+
+#. module: mail_gateway_whatsapp
+#. odoo-javascript
+#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#. module: mail_gateway_whatsapp
 #: model_terms:ir.ui.view,arch_db:mail_gateway_whatsapp.mail_gateway_form_view
 msgid ""
 "<span>Define the values of the fields <b>Webhook Key</b> and <b>Whatsapp Security Key</b>.\n"
