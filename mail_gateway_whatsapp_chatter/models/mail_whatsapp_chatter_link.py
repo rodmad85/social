@@ -50,4 +50,40 @@ class MailWhatsappChatterLink(models.Model):
                     "partner_id": partner.id if partner else False,
                 }
             )
+            self._sync_historical_messages(channel, record)
         return link
+
+    @api.model
+    def _sync_historical_messages(self, channel, record):
+        current_partner = self.env.user.partner_id
+        messages = channel.message_ids.filtered(
+            lambda m: m.gateway_type == "whatsapp"
+            and m.author_id
+            and m.author_id != current_partner
+        ).sorted(key=lambda m: m.id)
+        if not messages:
+            return
+        follower_partners = (
+            self.env["mail.followers"]
+            .sudo()
+            .search([
+                ("res_model", "=", record._name),
+                ("res_id", "=", record.id),
+            ])
+            .partner_id
+        )
+        for message in messages:
+            author_id = message.author_id.id if message.author_id and message.author_id._name == "res.partner" else False
+            new_message = record.sudo().message_post(
+                body=message.body,
+                author_id=author_id,
+                gateway_type="whatsapp",
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+                attachment_ids=message.attachment_ids.ids,
+            )
+            for partner in follower_partners:
+                partner.sudo()._bus_send_store(
+                    new_message.sudo(),
+                    notification_type="mail.record/insert",
+                )

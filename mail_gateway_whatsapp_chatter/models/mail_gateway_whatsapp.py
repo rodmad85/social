@@ -13,7 +13,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
             if not record.exists():
                 continue
             author_id = author.id if author and author._name == "res.partner" else False
-            new_message = record.message_post(
+            new_message = record.sudo().message_post(
                 body=body,
                 author_id=author_id,
                 gateway_type="whatsapp",
