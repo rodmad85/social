@@ -36,6 +36,26 @@ class MailMessage(models.Model):
         return result
 
     def _send_to_gateway_thread(self, gateway_channel_id):
+        if gateway_channel_id.gateway_id.gateway_type == "whatsapp":
+            chat_id = gateway_channel_id.gateway_id._get_channel_id(
+                gateway_channel_id.gateway_token
+            )
+            if not chat_id:
+                token = gateway_channel_id.gateway_token
+                self.env["mail.gateway.whatsapp"]._get_channel(
+                    gateway_channel_id.gateway_id,
+                    token,
+                    {
+                        "contacts": [
+                            {
+                                "wa_id": token,
+                                "profile": {"name": gateway_channel_id.name},
+                            }
+                        ],
+                        "messages": [{"from": token}],
+                    },
+                    force_create=True,
+                )
         result = super()._send_to_gateway_thread(gateway_channel_id)
         chat_id = gateway_channel_id.gateway_id._get_channel_id(
             gateway_channel_id.gateway_token
