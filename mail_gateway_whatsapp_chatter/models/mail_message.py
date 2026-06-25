@@ -49,7 +49,7 @@ class MailMessage(models.Model):
                         "contacts": [
                             {
                                 "wa_id": token,
-                                "profile": {"name": gateway_channel_id.name},
+                                "profile": {"name": gateway_channel_id.partner_id.name or token},
                             }
                         ],
                         "messages": [{"from": token}],
