@@ -119,6 +119,19 @@
         </field>
     </record>
 
+    <record model="ir.ui.view" id="mail_whatsapp_message_channel_tree_view">
+        <field name="name">mail.message.whatsapp.channel.tree</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <list default_order="date desc" class="o_whatsapp_chat_list" decoration-info="is_whatsapp_incoming" decoration-success="not is_whatsapp_incoming">
+                <field name="is_whatsapp_incoming" invisible="1" />
+                <field name="date" optional="hide" />
+                <field name="author_id" />
+                <field name="body" />
+            </list>
+        </field>
+    </record>
+
     <record model="ir.ui.view" id="mail_whatsapp_message_tree_view">
         <field name="name">mail.message.whatsapp.tree</field>
         <field name="model">mail.message</field>

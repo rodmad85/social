@@ -88,8 +88,8 @@ class MailWhatsappConversation(models.Model):
             "type": "ir.actions.act_window",
             "name": "Mensagens",
             "res_model": "mail.message",
-            "view_mode": "kanban",
-            "views": [(self.env.ref("mail_gateway_whatsapp_messages.mail_whatsapp_message_kanban_view").id, "kanban")],
+            "view_mode": "list",
+            "views": [(self.env.ref("mail_gateway_whatsapp_messages.mail_whatsapp_message_channel_tree_view").id, "list")],
             "domain": [
                 ("model", "=", "discuss.channel"),
                 ("res_id", "=", self.channel_id.id),

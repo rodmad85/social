@@ -38,3 +38,14 @@
         }
     }
 }
+
+.o_whatsapp_chat_list.o_list_view {
+    tr.text-info {
+        background-color: #f1f1f1;
+        color: #111;
+    }
+    tr.text-success {
+        background-color: #d9fdd3;
+        color: #111;
+    }
+}
