@@ -130,7 +130,7 @@ class MailWhatsappConversation(models.Model):
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY lm.last_message_date DESC NULLS LAST) AS id,
                     lm.channel_id,
-                    rp.id AS partner_id,
+                    COALESCE(contact_match.contact_partner_id, rp.id) AS partner_id,
                     lm.gateway_id,
                     lm.last_message_date,
                     lm.last_message_body,
@@ -154,7 +154,7 @@ class MailWhatsappConversation(models.Model):
                             LIMIT 1
                         )
                     ) THEN TRUE ELSE FALSE END AS is_unassigned,
-                    COALESCE(rp.name, dc.name, 'WhatsApp') AS display_name
+                    COALESCE(contact_match.contact_name, rp.name, dc.name, 'WhatsApp') AS display_name
                 FROM latest_messages lm
                 JOIN discuss_channel dc ON dc.id = lm.channel_id
                 LEFT JOIN res_partner rp ON rp.id = lm.author_id
@@ -167,6 +167,13 @@ class MailWhatsappConversation(models.Model):
                       AND rp2.user_id IS NOT NULL
                     LIMIT 1
                 ) rp_match ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT rp3.id AS contact_partner_id, rp3.name AS contact_name
+                    FROM res_partner rp3
+                    WHERE dc.gateway_channel_token IS NOT NULL
+                      AND (rp3.phone = dc.gateway_channel_token OR rp3.mobile = dc.gateway_channel_token)
+                    LIMIT 1
+                ) contact_match ON TRUE
             )
         """)
         self.action_auto_assign_by_phone()
