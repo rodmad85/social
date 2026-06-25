@@ -56,6 +56,14 @@ class MailMessage(models.Model):
                     },
                     force_create=True,
                 )
+            if self.model and self.res_id:
+                record = self.env[self.model].browse(self.res_id)
+                if record.exists() and "user_id" in record._fields and record.user_id and record.user_id != self.env.user:
+                    raise UserError(
+                        self.env._(
+                            "Only the assigned salesperson can send WhatsApp messages for this record."
+                        )
+                    )
         result = super()._send_to_gateway_thread(gateway_channel_id)
         chat_id = gateway_channel_id.gateway_id._get_channel_id(
             gateway_channel_id.gateway_token
@@ -79,14 +87,6 @@ class MailThread(models.AbstractModel):
 
     def _get_gateway_follower_partners(self, record):
         partners = self.env["res.partner"]
-        followers = record.message_get_followers()
-        if "mail.followers" in followers:
-            follower_partner_ids = [
-                f["partner"]["id"]
-                for f in followers["mail.followers"]
-                if isinstance(f.get("partner"), dict)
-            ]
-            partners |= self.env["res.partner"].browse(set(follower_partner_ids))
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
         return partners.filtered("gateway_channel_ids")
@@ -146,13 +146,19 @@ class MailThread(models.AbstractModel):
         for record in self:
             partners_with_gateway = self._get_gateway_follower_partners(record)
             if partners_with_gateway:
+                whatsapp_can_send = not (
+                    "user_id" in record._fields
+                    and record.user_id
+                    and record.user_id != self.env.user
+                )
                 store.add(
                     record,
                     {
                         "gateway_followers": [
                             {"id": p.id, "type": "partner"}
                             for p in partners_with_gateway
-                        ]
+                        ],
+                        "whatsapp_can_send": whatsapp_can_send,
                     },
                     as_thread=True,
                 )
