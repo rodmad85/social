@@ -8,6 +8,7 @@
     "depends": ["mail", "mail_gateway", "mail_gateway_whatsapp"],
     "data": [
         "security/ir.model.access.csv",
+        "security/security.xml",
         "views/mail_whatsapp_chatter_views.xml",
         "views/whatsapp_composer_views.xml",
     ],

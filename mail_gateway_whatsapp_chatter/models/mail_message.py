@@ -69,10 +69,19 @@ class MailMessage(models.Model):
             gateway_channel_id.gateway_token
         )
         channel = self.env["discuss.channel"].browse(chat_id)
-        if channel and self.model and self.res_id and gateway_channel_id.gateway_id.gateway_type == "whatsapp":
-            record = self.env[self.model].browse(self.res_id)
-            if record.exists():
-                self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
+        if channel and gateway_channel_id.gateway_id.gateway_type == "whatsapp":
+            if not self.env["discuss.channel.member"].sudo().search_count([
+                ("channel_id", "=", channel.id),
+                ("partner_id", "=", self.env.user.partner_id.id),
+            ]):
+                self.env["discuss.channel.member"].sudo().create({
+                    "channel_id": channel.id,
+                    "partner_id": self.env.user.partner_id.id,
+                })
+            if self.model and self.res_id:
+                record = self.env[self.model].browse(self.res_id)
+                if record.exists():
+                    self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
         return result
 
     def _get_gateway_thread_message_vals(self):
