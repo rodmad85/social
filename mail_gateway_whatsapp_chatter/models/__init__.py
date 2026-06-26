@@ -4,5 +4,3 @@ from . import mail_message
 from . import discuss_channel
 from . import mail_whatsapp_template
 from . import mail_notification
-from . import ir_actions_server
-from . import mail_message_gateway_link

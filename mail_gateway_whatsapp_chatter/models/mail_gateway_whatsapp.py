@@ -1,5 +1,21 @@
-from odoo import models
+from odoo import api, models
 from odoo.exceptions import UserError
+
+
+class IrServerAction(models.Model):
+    _inherit = "ir.actions.server"
+
+    @api.depends("state")
+    def _compute_available_model_ids(self):
+        gateway_based = self.filtered(lambda action: action.state == "whatsapp")
+        if gateway_based:
+            mail_models = self.env["ir.model"].sudo().search(
+                [("is_mail_thread", "=", True), ("transient", "=", False)]
+            )
+            gateway_based.available_model_ids = mail_models.ids
+        return super(
+            IrServerAction, self - gateway_based
+        )._compute_available_model_ids()
 
 
 class MailGatewayWhatsappService(models.AbstractModel):
