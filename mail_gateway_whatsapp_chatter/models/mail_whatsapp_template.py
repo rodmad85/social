@@ -1,8 +1,17 @@
-from odoo import models
+from odoo import api, fields, models
+from odoo.exceptions import UserError, ValidationError
 
 
 class MailWhatsAppTemplate(models.Model):
     _inherit = "mail.whatsapp.template"
+
+    model_id = fields.Many2one(
+        string="Applies to",
+        comodel_name="ir.model",
+        default=lambda self: self.env["ir.model"].sudo()._get_id("res.partner"),
+        required=True,
+        ondelete="cascade",
+    )
 
     def prepare_value_to_send(self):
         self.ensure_one()
@@ -56,3 +65,48 @@ class MailWhatsAppTemplate(models.Model):
             body = body.replace(placeholder, str(value))
         message = f"*{header}*\n\n{body}" if header else body
         return message
+
+
+class MailWhatsAppTemplateVariable(models.Model):
+    _inherit = "mail.whatsapp.template.variable"
+
+    @api.constrains("field_name")
+    def _check_field_name(self):
+        failing = self.browse()
+        missing = self.filtered(lambda variable: not variable.field_name)
+        if missing:
+            raise ValidationError(
+                self.env._(
+                    "Field template variables %(variables)s "
+                    "must be associated with a field.",
+                    variables=", ".join(missing.mapped("name")),
+                )
+            )
+        for variable in self:
+            model = self.env[variable.model]
+            if not model.has_access("read"):
+                model_description = (
+                    self.env["ir.model"].sudo()._get(variable.model).display_name
+                )
+                raise ValidationError(
+                    self.env._(
+                        "You can not select field of %(model)s.",
+                        model=model_description,
+                    )
+                )
+            try:
+                variable._extract_value_from_field_path(model)
+            except UserError:
+                failing += variable
+        if failing:
+            model_description = (
+                self.env["ir.model"].sudo()._get(failing.mapped("model")[0]).display_name
+            )
+            raise ValidationError(
+                self.env._(
+                    "Variables %(field_names)s do not seem to be valid field path "
+                    "for model %(model_name)s.",
+                    field_names=", ".join(failing.mapped("field_name")),
+                    model_name=model_description,
+                )
+            )
