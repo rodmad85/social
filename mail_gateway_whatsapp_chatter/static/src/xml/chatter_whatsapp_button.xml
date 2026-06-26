@@ -5,7 +5,7 @@
             <button
                 class="o-mail-Chatter-whatsapp btn text-nowrap me-1"
                 type="button"
-                t-if="hasGatewayGroup and state.thread.whatsapp_can_send"
+                t-if="state.thread.whatsapp_can_send or isSaleAdmin"
                 t-att-class="{
                     'btn-primary active': state.whatsappActive,
                     'btn-secondary': !state.whatsappActive,

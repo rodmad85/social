@@ -1,10 +1,17 @@
 import {Chatter} from "@mail/chatter/web_portal/chatter";
 import {patch} from "@web/core/utils/patch";
+import {onWillStart} from "@odoo/owl";
+import {user} from "@web/core/user";
 
 patch(Chatter.prototype, {
     setup() {
         super.setup(...arguments);
         this.state.whatsappActive = false;
+        onWillStart(async () => {
+            this.isSaleAdmin = await user.hasGroup(
+                "sales_team.group_sale_manager"
+            );
+        });
     },
     _toggleWhatsappComposer() {
         const willOpen = this.state.composerType !== "gateway";

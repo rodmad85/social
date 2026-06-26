@@ -94,10 +94,14 @@ class MailMessage(models.Model):
 class MailThread(models.AbstractModel):
     _inherit = "mail.thread"
 
-    def _get_gateway_follower_partners(self, record):
+    def _get_gateway_follower_partners(self, record, allow_phone=False):
         partners = self.env["res.partner"]
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
+        if allow_phone:
+            return partners.filtered(
+                lambda p: p.gateway_channel_ids or p.mobile or p.phone
+            )
         return partners.filtered("gateway_channel_ids")
 
     def _whatsapp_get_channel(self, field_name, gateway):
@@ -153,7 +157,9 @@ class MailThread(models.AbstractModel):
     def _thread_to_store(self, store, /, *, fields=None, request_list=None):
         res = super()._thread_to_store(store, fields=fields, request_list=request_list)
         for record in self:
-            partners_with_gateway = self._get_gateway_follower_partners(record)
+            partners_with_gateway = self._get_gateway_follower_partners(
+                record, allow_phone=True
+            )
             if partners_with_gateway:
                 whatsapp_can_send = not (
                     "user_id" in record._fields
@@ -172,14 +178,16 @@ class MailThread(models.AbstractModel):
                     as_thread=True,
                 )
                 for partner in partners_with_gateway:
+                    gateway_channels = partner.gateway_channel_ids
                     store.add(
                         "res.partner",
                         {
                             "id": partner.id,
                             "gateway_channels": [
-                                gc._mail_format()
-                                for gc in partner.gateway_channel_ids
-                            ],
+                                gc._mail_format() for gc in gateway_channels
+                            ]
+                            if gateway_channels
+                            else [],
                         },
                     )
         return res
