@@ -4,3 +4,4 @@ from . import mail_message
 from . import discuss_channel
 from . import mail_whatsapp_template
 from . import mail_notification
+from . import whatsapp_composer
