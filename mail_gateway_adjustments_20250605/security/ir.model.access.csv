@@ -1,4 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_discuss_channel_unassigned_gateway_user,discuss.channel.unassigned.gateway.user,mail.model_discuss_channel,mail_gateway.gateway_user,1,0,0,0
-access_discuss_channel_transfer_wizard_gateway_user,discuss.channel.transfer.wizard,model_discuss_channel_transfer_wizard,mail_gateway.gateway_user,1,1,1,0
-access_discuss_channel_transfer_wizard_system,discuss.channel.transfer.wizard.system,model_discuss_channel_transfer_wizard,base.group_system,1,1,1,0

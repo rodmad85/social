@@ -11,6 +11,9 @@ patch(Chatter.prototype, {
             this.isSaleAdmin = await user.hasGroup(
                 "sales_team.group_sale_manager"
             );
+            this.isSdr = await user.hasGroup(
+                "crm_commissions.group_crm_commission_sdr"
+            );
         });
     },
     _toggleWhatsappComposer() {

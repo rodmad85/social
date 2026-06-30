@@ -5,7 +5,7 @@
     "license": "AGPL-3",
     "author": "Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/social",
-    "depends": ["mail", "mail_gateway", "mail_gateway_whatsapp"],
+    "depends": ["mail", "mail_gateway", "mail_gateway_whatsapp", "sales_team"],
     "data": [
         "security/ir.model.access.csv",
         "security/security.xml",

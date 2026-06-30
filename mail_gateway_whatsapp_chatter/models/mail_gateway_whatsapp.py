@@ -34,6 +34,8 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     and "user_id" in record_model._fields
                     and record_model.user_id
                     and record_model.user_id != self.env.user
+                    and not self.env.user.has_group("sales_team.group_sale_manager")
+                    and not self.env.user.has_group("crm_commissions.group_crm_commission_sdr")
                 ):
                     raise UserError(
                         self.env._(

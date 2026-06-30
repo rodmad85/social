@@ -58,7 +58,14 @@ class MailMessage(models.Model):
                 )
             if self.model and self.res_id:
                 record = self.env[self.model].browse(self.res_id)
-                if record.exists() and "user_id" in record._fields and record.user_id and record.user_id != self.env.user:
+                if (
+                    record.exists()
+                    and "user_id" in record._fields
+                    and record.user_id
+                    and record.user_id != self.env.user
+                    and not self.env.user.has_group("sales_team.group_sale_manager")
+                    and not self.env.user.has_group("crm_commissions.group_crm_commission_sdr")
+                ):
                     raise UserError(
                         self.env._(
                             "Only the assigned salesperson can send WhatsApp messages for this record."
