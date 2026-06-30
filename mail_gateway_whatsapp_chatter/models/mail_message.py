@@ -231,3 +231,23 @@ class ResPartner(models.Model):
                 },
             )
         return res
+
+
+class WhatsappComposer(models.TransientModel):
+    _inherit = "whatsapp.composer"
+
+    def _action_send_whatsapp(self):
+        record = self.env[self.res_model].browse(self.res_id)
+        if not record:
+            return
+        channel = record._whatsapp_get_channel(
+            self.number_field_name, self.gateway_id
+        )
+        self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
+        channel.with_context(
+            whatsapp_template_id=self.template_id.id
+        ).message_post(
+            body=self.body,
+            subtype_xmlid="mail.mt_comment",
+            message_type="comment",
+        )
