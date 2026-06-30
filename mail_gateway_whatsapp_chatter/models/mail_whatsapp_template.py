@@ -15,7 +15,7 @@ class MailWhatsAppTemplate(models.Model):
 
     def prepare_value_to_send(self):
         self.ensure_one()
-        model_name = self.model_id.model
+        model_name = self.model
         rec_id = self.env.context.get("default_res_id")
         if rec_id is None:
             rec_ids = self.env.context.get("res_id")
@@ -38,7 +38,7 @@ class MailWhatsAppTemplate(models.Model):
 
     def render_body_message(self):
         self.ensure_one()
-        model_name = self.model_id.model
+        model_name = self.model
         rec_id = self.env.context.get("default_res_id")
         if rec_id is None:
             rec_ids = self.env.context.get("default_res_ids")

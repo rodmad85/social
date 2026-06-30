@@ -132,7 +132,7 @@ class MailWhatsappConversation(models.Model):
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY lm.last_message_date DESC NULLS LAST) AS id,
                     lm.channel_id,
-                    contact_match.contact_partner_id AS partner_id,
+                    COALESCE(contact_match.contact_partner_id, rp.id) AS partner_id,
                     rp.id AS author_partner_id,
                     ru.id AS author_user_id,
                     lm.gateway_id,
@@ -158,7 +158,7 @@ class MailWhatsappConversation(models.Model):
                             LIMIT 1
                         )
                     ) THEN TRUE ELSE FALSE END AS is_unassigned,
-                    contact_match.contact_name AS display_name
+                    COALESCE(contact_match.contact_name, rp.name, dc.name, 'WhatsApp') AS display_name
                 FROM latest_messages lm
                 JOIN discuss_channel dc ON dc.id = lm.channel_id
                 LEFT JOIN res_partner rp ON rp.id = lm.author_id

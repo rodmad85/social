@@ -6,7 +6,7 @@
         <field name="model">mail.whatsapp.conversation</field>
         <field name="arch" type="xml">
             <list>
-                <field name="author_partner_id" string="Autor" />
+                <field name="author_user_id" string="Autor" />
                 <field name="display_name" string="Destinatário" />
                 <field name="last_message_date" string="Última mensagem" />
                 <field name="last_message_body" string="Mensagem" optional="show" />
