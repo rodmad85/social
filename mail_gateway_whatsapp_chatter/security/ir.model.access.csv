@@ -1,5 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mail_whatsapp_chatter_link_user,mail.whatsapp.chatter.link.user,model_mail_whatsapp_chatter_link,mail_gateway.gateway_user,1,1,1,1
 access_mail_whatsapp_chatter_link_admin,mail.whatsapp.chatter.link.admin,model_mail_whatsapp_chatter_link,base.group_system,1,1,1,1
-access_res_users_sales_salesman,res.users.sales.salesman,model_res_users,sales_team.group_sale_salesman,1,1,0,0
-access_res_users_sales_manager,res.users.sales.manager,model_res_users,sales_team.group_sale_manager,1,1,1,1
+access_res_users_sales_salesman,res.users.sales.salesman,base.model_res_users,sales_team.group_sale_salesman,1,1,0,0
+access_res_users_sales_manager,res.users.sales.manager,base.model_res_users,sales_team.group_sale_manager,1,1,1,1
