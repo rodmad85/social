@@ -106,8 +106,17 @@ class MailThread(models.AbstractModel):
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
         if allow_phone:
+            record_has_phone = any(
+                record[field]
+                for field in record._phone_get_number_fields()
+                if field in record._fields
+            ) if hasattr(record, "_phone_get_number_fields") else any(
+                record[field]
+                for field in ["phone", "mobile"]
+                if field in record._fields
+            )
             return partners.filtered(
-                lambda p: p.gateway_channel_ids or p.mobile or p.phone
+                lambda p: p.gateway_channel_ids or p.mobile or p.phone or record_has_phone
             )
         return partners.filtered("gateway_channel_ids")
 
