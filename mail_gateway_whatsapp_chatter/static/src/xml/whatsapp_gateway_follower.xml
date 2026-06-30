@@ -16,6 +16,15 @@
                     t-esc="template.name"
                 />
             </select>
+            <span class="d-inline-flex align-items-center ms-2">
+                <input
+                    type="checkbox"
+                    disabled="disabled"
+                    class="form-check-input mt-0"
+                    t-att-checked="props.composer.thread.has_whatsapp_conversation"
+                />
+                <span class="text-muted small ms-1">Conversa iniciada</span>
+            </span>
         </xpath>
     </t>
 </templates>

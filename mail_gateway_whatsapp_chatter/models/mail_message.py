@@ -176,6 +176,19 @@ class MailThread(models.AbstractModel):
                 and record.user_id
                 and record.user_id != self.env.user
             )
+            has_whatsapp_conversation = False
+            if "mail.whatsapp.chatter.link" in self.env.registry:
+                link = self.env["mail.whatsapp.chatter.link"].sudo().search([
+                    ("res_model", "=", record._name),
+                    ("res_id", "=", record.id),
+                ], limit=1)
+                has_whatsapp_conversation = bool(
+                    link
+                    and link.channel_id
+                    and link.channel_id.message_ids.filtered(
+                        lambda m: m.gateway_type == "whatsapp"
+                    )
+                )
             store.add(
                 record,
                 {
@@ -184,6 +197,7 @@ class MailThread(models.AbstractModel):
                         for p in gateway_followers
                     ],
                     "whatsapp_can_send": whatsapp_can_send,
+                    "has_whatsapp_conversation": has_whatsapp_conversation,
                 },
                 as_thread=True,
             )
