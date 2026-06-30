@@ -15,14 +15,10 @@ patch(Chatter.prototype, {
             );
         });
     },
-    async _toggleWhatsappComposer() {
+    _toggleWhatsappComposer() {
         const willOpen = this.state.composerType !== "gateway";
         this.state.whatsappActive = willOpen;
         this.toggleComposer("gateway");
-        // Refresh thread data to load gateway_followers (for new records where partner is set after initial load)
-        if (willOpen && this.state.thread) {
-            await this.store.fetchData(this.state.thread);
-        }
     },
     toggleComposer(mode = false) {
         super.toggleComposer(mode);
