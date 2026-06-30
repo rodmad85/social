@@ -126,6 +126,12 @@ class MailThread(models.AbstractModel):
         )
         if existing:
             if existing.gateway_token != sanitized_number:
+                old_channel = self.env["discuss.channel"].search([
+                    ("gateway_channel_token", "=", existing.gateway_token),
+                    ("gateway_id", "=", gateway.id),
+                ], limit=1)
+                if old_channel:
+                    old_channel.gateway_channel_token = sanitized_number
                 existing.gateway_token = sanitized_number
         else:
             self.env["res.partner.gateway.channel"].create(
