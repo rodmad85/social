@@ -105,20 +105,9 @@ class MailThread(models.AbstractModel):
         partners = self.env["res.partner"]
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
-        if allow_phone:
-            record_has_phone = any(
-                record[field]
-                for field in record._phone_get_number_fields()
-                if field in record._fields
-            ) if hasattr(record, "_phone_get_number_fields") else any(
-                record[field]
-                for field in ["phone", "mobile"]
-                if field in record._fields
-            )
-            return partners.filtered(
-                lambda p: p.gateway_channel_ids or p.mobile or p.phone or record_has_phone
-            )
-        return partners.filtered("gateway_channel_ids")
+        if not allow_phone:
+            partners = partners.filtered("gateway_channel_ids")
+        return partners
 
     def _whatsapp_get_channel(self, field_name, gateway):
         sanitized_number = self._phone_format(number=self[field_name])
@@ -179,39 +168,38 @@ class MailThread(models.AbstractModel):
     def _thread_to_store(self, store, /, *, fields=None, request_list=None):
         res = super()._thread_to_store(store, fields=fields, request_list=request_list)
         for record in self:
-            partners_with_gateway = self._get_gateway_follower_partners(
+            gateway_followers = self._get_gateway_follower_partners(
                 record, allow_phone=True
             )
-            if partners_with_gateway:
-                whatsapp_can_send = not (
-                    "user_id" in record._fields
-                    and record.user_id
-                    and record.user_id != self.env.user
-                )
+            whatsapp_can_send = not (
+                "user_id" in record._fields
+                and record.user_id
+                and record.user_id != self.env.user
+            )
+            store.add(
+                record,
+                {
+                    "gateway_followers": [
+                        {"id": p.id, "type": "partner"}
+                        for p in gateway_followers
+                    ],
+                    "whatsapp_can_send": whatsapp_can_send,
+                },
+                as_thread=True,
+            )
+            for partner in gateway_followers:
+                gateway_channels = partner.gateway_channel_ids
                 store.add(
-                    record,
+                    "res.partner",
                     {
-                        "gateway_followers": [
-                            {"id": p.id, "type": "partner"}
-                            for p in partners_with_gateway
-                        ],
-                        "whatsapp_can_send": whatsapp_can_send,
+                        "id": partner.id,
+                        "gateway_channels": [
+                            gc._mail_format() for gc in gateway_channels
+                        ]
+                        if gateway_channels
+                        else [],
                     },
-                    as_thread=True,
                 )
-                for partner in partners_with_gateway:
-                    gateway_channels = partner.gateway_channel_ids
-                    store.add(
-                        "res.partner",
-                        {
-                            "id": partner.id,
-                            "gateway_channels": [
-                                gc._mail_format() for gc in gateway_channels
-                            ]
-                            if gateway_channels
-                            else [],
-                        },
-                    )
         return res
 
 

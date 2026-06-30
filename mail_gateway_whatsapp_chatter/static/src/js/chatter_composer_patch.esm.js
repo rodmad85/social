@@ -2,7 +2,6 @@ import {Chatter} from "@mail/chatter/web_portal/chatter";
 import {patch} from "@web/core/utils/patch";
 import {onWillStart} from "@odoo/owl";
 import {user} from "@web/core/user";
-
 patch(Chatter.prototype, {
     setup() {
         super.setup(...arguments);
@@ -16,10 +15,14 @@ patch(Chatter.prototype, {
             );
         });
     },
-    _toggleWhatsappComposer() {
+    async _toggleWhatsappComposer() {
         const willOpen = this.state.composerType !== "gateway";
         this.state.whatsappActive = willOpen;
         this.toggleComposer("gateway");
+        // Refresh thread data to load gateway_followers (for new records where partner is set after initial load)
+        if (willOpen && this.state.thread) {
+            await this.store.fetchData(this.state.thread);
+        }
     },
     toggleComposer(mode = false) {
         super.toggleComposer(mode);
