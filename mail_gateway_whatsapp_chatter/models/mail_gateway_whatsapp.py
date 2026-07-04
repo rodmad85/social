@@ -82,5 +82,106 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     notification_type="mail.record/insert",
                 )
 
+    def _get_author(self, gateway, update):
+        author_id = update.get("messages")[0].get("from")
+        if author_id:
+            gateway_partner = self.env["res.partner.gateway.channel"].search(
+                [
+                    ("gateway_id", "=", gateway.id),
+                    ("gateway_token", "=", str(author_id)),
+                ],
+                limit=1,
+            )
+            if gateway_partner:
+                return gateway_partner.partner_id
+            partner = self.env["res.partner"].search(
+                [("phone_sanitized", "=", "+" + str(author_id))], limit=1
+            )
+            if not partner:
+                partner = self.env["res.partner"].search(
+                    [("phone_sanitized", "=", str(author_id))], limit=1
+                )
+            if not partner:
+                partner = self.env["res.partner"].search([
+                    "|",
+                    ("phone", "=like", "%" + str(author_id)[-8:]),
+                    ("mobile", "=like", "%" + str(author_id)[-8:]),
+                ], limit=1)
+            if partner:
+                self.env["res.partner.gateway.channel"].create(
+                    {
+                        "name": gateway.name,
+                        "partner_id": partner.id,
+                        "gateway_id": gateway.id,
+                        "gateway_token": str(author_id),
+                    }
+                )
+                return partner
+            guest = self.env["mail.guest"].search(
+                [
+                    ("gateway_id", "=", gateway.id),
+                    ("gateway_token", "=", str(author_id)),
+                ]
+            )
+            if guest:
+                return guest
+            author_vals = self._get_author_vals(gateway, author_id, update)
+            if author_vals:
+                return self.env["mail.guest"].create(author_vals)
+
+        return False
+
+    def _receive_update(self, gateway, update):
+        affected_phones = set()
+        if update:
+            for entry in update["entry"]:
+                for change in entry["changes"]:
+                    if change["field"] != "messages":
+                        continue
+                    for message in change["value"].get("messages", []):
+                        if message.get("from"):
+                            affected_phones.add(message["from"])
+        super()._receive_update(gateway, update)
+        for phone in affected_phones:
+            chat_id = gateway._get_channel_id(phone)
+            if chat_id:
+                channel = self.env["discuss.channel"].browse(chat_id)
+                self._notify_unassigned(channel)
+
+    def _notify_unassigned(self, channel):
+        has_active_user = bool(
+            self.env["discuss.channel.member"].sudo().search_count([
+                ("channel_id", "=", channel.id),
+                ("partner_id.user_ids.active", "=", True),
+            ])
+        )
+        if has_active_user:
+            return
+        group_xml_ids = [
+            "sales_team.group_sale_manager",
+            "crm_commissions.group_crm_commission_sdr",
+        ]
+        groups = self.env["res.groups"]
+        for xml_id in group_xml_ids:
+            groups |= self.env.ref(xml_id)
+        leader_group = self.env["res.groups"].search(
+            [("name", "=ilike", "Líderes de Equipe de Vendas")], limit=1
+        )
+        if leader_group:
+            groups |= leader_group
+        users = groups.users.filtered(
+            lambda u: u.active and u.has_group("mail_gateway.gateway_user")
+        )
+        if not users:
+            return
+        body = self.env._(
+            "New unassigned WhatsApp conversation from %s"
+        ) % (channel.name or self.env._("Unknown"))
+        channel.sudo().message_post(
+            body=body,
+            message_type="notification",
+            partner_ids=users.partner_id.ids,
+        )
+
     def _post_process_message(self, message, channel):
         return super()._post_process_message(message, channel)

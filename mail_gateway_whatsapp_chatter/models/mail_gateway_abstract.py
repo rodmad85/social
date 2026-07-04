@@ -6,7 +6,10 @@ class MailGatewayAbstract(models.AbstractModel):
 
     def _get_channel_vals(self, gateway, token, update):
         author = self._get_author(gateway, update)
-        members = []
+        members = [
+            Command.create({"partner_id": p.id, "unpin_dt": False})
+            for p in gateway.member_ids.partner_id
+        ]
         if author:
             members.append(
                 Command.create(
@@ -25,12 +28,4 @@ class MailGatewayAbstract(models.AbstractModel):
         }
 
     def _get_channel(self, gateway, token, update, force_create=False):
-        chat_id = gateway._get_channel_id(token)
-        if chat_id:
-            return gateway.env["discuss.channel"].browse(chat_id)
-        if not force_create and gateway.has_new_channel_security:
-            return False
-        channel = gateway.env["discuss.channel"].create(
-            self._get_channel_vals(gateway, token, update)
-        )
-        return channel
+        return super()._get_channel(gateway, token, update, force_create=force_create)

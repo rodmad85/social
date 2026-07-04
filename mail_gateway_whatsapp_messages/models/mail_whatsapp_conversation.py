@@ -50,11 +50,10 @@ class MailWhatsappConversation(models.Model):
 
     def action_auto_assign_by_phone(self):
         self.env.cr.execute("""
-            INSERT INTO discuss_channel_member (partner_id, channel_id)
-            SELECT ru.partner_id, dc.id
+            INSERT INTO discuss_channel_member (partner_id, channel_id, new_message_separator)
+            SELECT ru.partner_id, dc.id, 0
             FROM discuss_channel dc
-            JOIN res_partner rp ON rp.phone = dc.gateway_channel_token
-                OR rp.mobile = dc.gateway_channel_token
+            JOIN res_partner rp ON (rp.phone_sanitized = '+' || dc.gateway_channel_token OR (rp.phone_sanitized = '+' || left(dc.gateway_channel_token, 4) || '9' || substring(dc.gateway_channel_token, 5) AND dc.gateway_channel_token ~ '^55[0-9]{2}'))
             JOIN res_users ru ON ru.id = rp.user_id AND ru.active = True
             WHERE dc.channel_type = 'gateway'
               AND dc.gateway_channel_token IS NOT NULL
@@ -168,7 +167,7 @@ class MailWhatsappConversation(models.Model):
                     SELECT rp2.user_id
                     FROM res_partner rp2
                     WHERE dc.gateway_channel_token IS NOT NULL
-                      AND (rp2.phone = dc.gateway_channel_token OR rp2.mobile = dc.gateway_channel_token)
+                      AND (rp2.phone_sanitized = '+' || dc.gateway_channel_token OR (rp2.phone_sanitized = '+' || left(dc.gateway_channel_token, 4) || '9' || substring(dc.gateway_channel_token, 5) AND dc.gateway_channel_token ~ '^55[0-9]{2}'))
                       AND rp2.user_id IS NOT NULL
                     LIMIT 1
                 ) rp_match ON TRUE
@@ -176,7 +175,7 @@ class MailWhatsappConversation(models.Model):
                     SELECT rp3.id AS contact_partner_id, rp3.name AS contact_name
                     FROM res_partner rp3
                     WHERE dc.gateway_channel_token IS NOT NULL
-                      AND (rp3.phone = dc.gateway_channel_token OR rp3.mobile = dc.gateway_channel_token)
+                      AND (rp3.phone_sanitized = '+' || dc.gateway_channel_token OR (rp3.phone_sanitized = '+' || left(dc.gateway_channel_token, 4) || '9' || substring(dc.gateway_channel_token, 5) AND dc.gateway_channel_token ~ '^55[0-9]{2}'))
                     LIMIT 1
                 ) contact_match ON TRUE
             )

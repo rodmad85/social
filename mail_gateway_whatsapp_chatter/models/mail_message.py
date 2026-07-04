@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -42,20 +42,23 @@ class MailMessage(models.Model):
             )
             if not chat_id:
                 token = gateway_channel_id.gateway_token
-                self.env["mail.gateway.whatsapp"]._get_channel(
-                    gateway_channel_id.gateway_id,
-                    token,
-                    {
-                        "contacts": [
-                            {
-                                "wa_id": token,
-                                "profile": {"name": gateway_channel_id.partner_id.name or token},
-                            }
-                        ],
-                        "messages": [{"from": token}],
-                    },
-                    force_create=True,
+                gateway = gateway_channel_id.gateway_id
+                partner = gateway_channel_id.partner_id
+                members = [
+                    Command.create({"partner_id": p.id, "unpin_dt": False})
+                    for p in gateway.member_ids.partner_id
+                ]
+                members.append(
+                    Command.create({"partner_id": partner.id})
                 )
+                self.env["discuss.channel"].create({
+                    "gateway_channel_token": token,
+                    "gateway_id": gateway.id,
+                    "channel_type": "gateway",
+                    "channel_member_ids": members,
+                    "company_id": gateway.company_id.id,
+                    "name": partner.display_name,
+                })
             if self.model and self.res_id:
                 record = self.env[self.model].browse(self.res_id)
                 if (
@@ -71,6 +74,12 @@ class MailMessage(models.Model):
                             "Only the assigned salesperson can send WhatsApp messages for this record."
                         )
                     )
+                chat_id = gateway_channel_id.gateway_id._get_channel_id(
+                    gateway_channel_id.gateway_token
+                )
+                channel = self.env["discuss.channel"].browse(chat_id)
+                if channel:
+                    self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
         result = super()._send_to_gateway_thread(gateway_channel_id)
         chat_id = gateway_channel_id.gateway_id._get_channel_id(
             gateway_channel_id.gateway_token
@@ -85,10 +94,6 @@ class MailMessage(models.Model):
                     "channel_id": channel.id,
                     "partner_id": self.env.user.partner_id.id,
                 })
-            if self.model and self.res_id:
-                record = self.env[self.model].browse(self.res_id)
-                if record.exists():
-                    self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
         return result
 
     def _get_gateway_thread_message_vals(self):
@@ -105,9 +110,36 @@ class MailThread(models.AbstractModel):
         partners = self.env["res.partner"]
         if "partner_id" in record._fields and record.partner_id:
             partners |= record.partner_id
-        if not allow_phone:
-            partners = partners.filtered("gateway_channel_ids")
-        return partners
+        if allow_phone:
+            return partners.filtered(
+                lambda p: p.gateway_channel_ids or p.mobile or p.phone
+            )
+        return partners.filtered("gateway_channel_ids")
+
+    def _whatsapp_get_or_create_channel(self, gateway, sanitized_number, partner):
+        chat_id = gateway._get_channel_id(sanitized_number)
+        if chat_id:
+            channel = self.env["discuss.channel"].browse(chat_id)
+            if partner and channel.name != partner.display_name:
+                channel.name = partner.display_name
+            return channel
+        members = [
+            Command.create({"partner_id": p.id, "unpin_dt": False})
+            for p in gateway.member_ids.partner_id
+        ]
+        members.append(
+            Command.create({"partner_id": partner.id})
+        )
+        channel = self.env["discuss.channel"].create({
+            "gateway_channel_token": sanitized_number,
+            "gateway_id": gateway.id,
+            "channel_type": "gateway",
+            "channel_member_ids": members,
+            "company_id": gateway.company_id.id,
+            "name": partner.display_name,
+        })
+        channel._broadcast(channel.channel_member_ids.mapped("partner_id").ids)
+        return channel
 
     def _whatsapp_get_channel(self, field_name, gateway):
         sanitized_number = self._phone_format(number=self[field_name])
@@ -140,19 +172,8 @@ class MailThread(models.AbstractModel):
                     "gateway_token": sanitized_number,
                 }
             )
-        return self.env["mail.gateway.whatsapp"]._get_channel(
-            gateway,
-            sanitized_number,
-            {
-                "contacts": [
-                    {
-                        "wa_id": sanitized_number,
-                        "profile": {"name": partner.display_name},
-                    }
-                ],
-                "messages": [{"from": sanitized_number}],
-            },
-            force_create=True,
+        return self._whatsapp_get_or_create_channel(
+            gateway, sanitized_number, partner
         )
 
     def _notify_thread_by_gateway(self, message, partners_data, **kwargs):
@@ -201,6 +222,45 @@ class MailThread(models.AbstractModel):
             )
             for partner in gateway_followers:
                 gateway_channels = partner.gateway_channel_ids
+                if not gateway_channels.filtered(
+                    lambda gc: gc.gateway_id.gateway_type == "whatsapp"
+                ):
+                    phone = partner.mobile or partner.phone
+                    if phone:
+                        sanitized_phone = self._phone_format(number=phone)
+                        sanitized = sanitized_phone.replace("+", "") if sanitized_phone else "".join(c for c in phone if c.isdigit())
+                        gateway = (
+                            self.env["mail.gateway"]
+                            .sudo()
+                            .search(
+                                [("gateway_type", "=", "whatsapp")], limit=1
+                            )
+                        )
+                        if gateway:
+                            existing = (
+                                self.env["res.partner.gateway.channel"]
+                                .sudo()
+                                .search(
+                                    [
+                                        ("partner_id", "=", partner.id),
+                                        ("gateway_id", "=", gateway.id),
+                                    ],
+                                    limit=1,
+                                )
+                            )
+                            if not existing:
+                                self.env[
+                                    "res.partner.gateway.channel"
+                                ].sudo().create(
+                                    {
+                                        "name": gateway.name,
+                                        "partner_id": partner.id,
+                                        "gateway_id": gateway.id,
+                                        "gateway_token": sanitized,
+                                    }
+                                )
+                            partner = self.env["res.partner"].browse(partner.id)
+                            gateway_channels = partner.gateway_channel_ids
                 store.add(
                     "res.partner",
                     {
@@ -256,6 +316,14 @@ class WhatsappComposer(models.TransientModel):
             self.number_field_name, self.gateway_id
         )
         self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
+        if not self.env["discuss.channel.member"].sudo().search_count([
+            ("channel_id", "=", channel.id),
+            ("partner_id", "=", self.env.user.partner_id.id),
+        ]):
+            self.env["discuss.channel.member"].sudo().create({
+                "channel_id": channel.id,
+                "partner_id": self.env.user.partner_id.id,
+            })
         channel.with_context(
             whatsapp_template_id=self.template_id.id
         ).message_post(
