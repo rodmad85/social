@@ -83,6 +83,20 @@ class MailWhatsappConversation(models.Model):
             },
         }
 
+    def action_assign_contact(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Assign Contact",
+            "res_model": "whatsapp.assign.contact.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_channel_id": self.channel_id.id,
+                "default_phone": self.phone,
+            },
+        }
+
     def action_open_channel(self):
         self.ensure_one()
         return {

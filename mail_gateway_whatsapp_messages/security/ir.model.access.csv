@@ -5,3 +5,7 @@ access_mail_whatsapp_conversation_user,mail.whatsapp.conversation.user,model_mai
 access_mail_whatsapp_conversation_admin,mail.whatsapp.conversation.admin,model_mail_whatsapp_conversation,base.group_system,1,0,0,0
 access_whatsapp_assign_wizard_user,whatsapp.assign.wizard.user,model_whatsapp_assign_conversation_wizard,mail_gateway.gateway_user,1,1,1,1
 access_whatsapp_assign_wizard_admin,whatsapp.assign.wizard.admin,model_whatsapp_assign_conversation_wizard,base.group_system,1,1,1,1
+access_whatsapp_phone_user,whatsapp.phone.user,model_res_partner_whatsapp_phone,mail_gateway.gateway_user,1,1,1,1
+access_whatsapp_phone_admin,whatsapp.phone.admin,model_res_partner_whatsapp_phone,base.group_system,1,1,1,1
+access_assign_contact_wizard_user,assign.contact.wizard.user,model_whatsapp_assign_contact_wizard,mail_gateway.gateway_user,1,1,1,1
+access_assign_contact_wizard_admin,assign.contact.wizard.admin,model_whatsapp_assign_contact_wizard,base.group_system,1,1,1,1

@@ -10,6 +10,8 @@
         "security/ir.model.access.csv",
         "views/mail_whatsapp_message_views.xml",
         "views/whatsapp_assign_conversation_views.xml",
+        "views/whatsapp_assign_contact_views.xml",
+        "views/res_partner_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

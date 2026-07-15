@@ -102,20 +102,29 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     [("phone_sanitized", "=", str(author_id))], limit=1
                 )
             if not partner:
-                partner = self.env["res.partner"].search([
-                    "|",
-                    ("phone", "=like", "%" + str(author_id)[-8:]),
-                    ("mobile", "=like", "%" + str(author_id)[-8:]),
-                ], limit=1)
+                candidates = [str(author_id)]
+                if len(str(author_id)) == 12:
+                    candidates.append(str(author_id)[:4] + "9" + str(author_id)[4:])
+                elif len(str(author_id)) == 13:
+                    candidates.append(str(author_id)[:4] + str(author_id)[5:])
+                for candidate in candidates:
+                    partner = self.env["res.partner"].search([
+                        ("phone_sanitized", "=like", "%" + candidate[-8:]),
+                    ], limit=1)
+                    if partner:
+                        break
             if partner:
-                self.env["res.partner.gateway.channel"].create(
-                    {
-                        "name": gateway.name,
-                        "partner_id": partner.id,
-                        "gateway_id": gateway.id,
-                        "gateway_token": str(author_id),
-                    }
-                )
+                if not self.env["res.partner.gateway.channel"].search_count([
+                    ("partner_id", "=", partner.id),
+                    ("gateway_id", "=", gateway.id),
+                ]):
+                    self.env["res.partner.gateway.channel"].create(
+                        {
+                            "partner_id": partner.id,
+                            "gateway_id": gateway.id,
+                            "gateway_token": str(author_id),
+                        }
+                    )
                 return partner
             guest = self.env["mail.guest"].search(
                 [
@@ -182,6 +191,29 @@ class MailGatewayWhatsappService(models.AbstractModel):
             message_type="notification",
             partner_ids=users.partner_id.ids,
         )
+
+    def _get_channel(self, gateway, token, update, force_create=False):
+        chat_id = gateway._get_channel_id(token)
+        if chat_id:
+            return super()._get_channel(gateway, token, update, force_create=force_create)
+        author = self._get_author(gateway, update)
+        if author and author._name == "res.partner":
+            gc = self.env["res.partner.gateway.channel"].search([
+                ("partner_id", "=", author.id),
+                ("gateway_id", "=", gateway.id),
+            ], limit=1)
+            if gc:
+                existing_chat_id = gateway._get_channel_id(gc.gateway_token)
+                if existing_chat_id:
+                    return self.env["discuss.channel"].browse(existing_chat_id)
+        return super()._get_channel(gateway, token, update, force_create=force_create)
+
+    def _get_channel_vals(self, gateway, token, update):
+        vals = super()._get_channel_vals(gateway, token, update)
+        author = self._get_author(gateway, update)
+        if author and author._name == "res.partner":
+            vals["name"] = author.display_name
+        return vals
 
     def _post_process_message(self, message, channel):
         return super()._post_process_message(message, channel)

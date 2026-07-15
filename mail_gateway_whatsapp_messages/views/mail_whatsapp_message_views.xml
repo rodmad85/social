@@ -28,9 +28,9 @@
                     invisible="not is_unassigned"
                 />
                 <button
-                    name="action_assign_wizard"
+                    name="action_assign_contact"
                     type="object"
-                    string="Atribuir"
+                    string="Atribuir Contato"
                     class="btn-success"
                     invisible="not is_unassigned"
                 />
@@ -125,10 +125,9 @@
         <field name="model">mail.message</field>
         <field name="arch" type="xml">
             <list default_order="date desc" class="o_whatsapp_chat_list" decoration-info="is_whatsapp_incoming" decoration-success="not is_whatsapp_incoming">
-                <field name="gateway_type" invisible="1" />
-                <field name="is_whatsapp_incoming" invisible="1" />
+                <field name="is_whatsapp_incoming" string="WhatsApp recebido" widget="boolean_fa" optional="show" />
+                <field name="whatsapp_author_name" string="Autor" />
                 <field name="date" optional="hide" />
-                <field name="author_id" />
                 <field name="body" />
             </list>
         </field>
