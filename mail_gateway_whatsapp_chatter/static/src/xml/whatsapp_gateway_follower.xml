@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
     <t t-inherit="mail_gateway.GatewayFollowerView" t-inherit-mode="extension">
-        <xpath expr="//select[@name='gatewayChannel']" position="replace">
+        <xpath expr="//div[hasclass('o_gateway_composer_selector')]" position="inside">
             <select
                 name="whatsappTemplate"
-                class="o_whatsapp_template_selector form-select form-select-sm d-inline-block w-auto"
+                class="o_whatsapp_template_selector form-select form-select-sm d-inline-block w-auto ms-2"
                 t-on-change="onChangeTemplate"
             >
                 <option value="">Selecionar modelo...</option>

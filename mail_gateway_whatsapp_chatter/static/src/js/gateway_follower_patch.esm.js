@@ -22,11 +22,18 @@ patch(GatewayFollower.prototype, {
         this.state.templates = templates;
     },
     _autoSelectWhatsapp() {
-        const whatsappChannel = this.props.follower.gateway_channels.find(
+        const whatsappChannels = this.props.follower.gateway_channels.filter(
             (channel) => channel.gateway?.type === "whatsapp"
         );
-        if (whatsappChannel && !this.channel) {
-            this.channel = whatsappChannel.id;
+        if (whatsappChannels.length === 1 && !this.channel) {
+            this.channel = whatsappChannels[0].id;
+            this.props.composer.thread.gateway_notifications.push(
+                this._getMessageData()
+            );
+            this.props.composer.thread.isGateway = true;
+        }
+        if (whatsappChannels.length > 1 && !this.channel) {
+            this.channel = whatsappChannels[0].id;
             this.props.composer.thread.gateway_notifications.push(
                 this._getMessageData()
             );
@@ -47,6 +54,26 @@ patch(GatewayFollower.prototype, {
         const template = this.state.templates.find((t) => t.id === templateId);
         if (template) {
             this.props.composer.text = template.body;
+        }
+    },
+    onChangeGatewayChannel(ev) {
+        const prevChannel = this.channel;
+        this.channel = parseInt(ev.target.value, 10);
+        if (prevChannel && this.channel) {
+            const notifIndex = this.props.composer.thread.gateway_notifications.findIndex(
+                (n) => n.gateway_channel_id === prevChannel
+            );
+            if (notifIndex !== -1) {
+                this.props.composer.thread.gateway_notifications.splice(notifIndex, 1);
+            }
+        }
+        if (this.channel) {
+            this.props.composer.thread.gateway_notifications.push(
+                this._getMessageData()
+            );
+            this.props.composer.thread.isGateway = true;
+        } else {
+            this._clearGatewayNotifications();
         }
     },
     _getMessageData() {

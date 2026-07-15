@@ -201,7 +201,13 @@ class MailGatewayWhatsappService(models.AbstractModel):
             gc = self.env["res.partner.gateway.channel"].search([
                 ("partner_id", "=", author.id),
                 ("gateway_id", "=", gateway.id),
+                ("gateway_token", "=", str(token)),
             ], limit=1)
+            if not gc:
+                gc = self.env["res.partner.gateway.channel"].search([
+                    ("partner_id", "=", author.id),
+                    ("gateway_id", "=", gateway.id),
+                ], limit=1)
             if gc:
                 existing_chat_id = gateway._get_channel_id(gc.gateway_token)
                 if existing_chat_id:

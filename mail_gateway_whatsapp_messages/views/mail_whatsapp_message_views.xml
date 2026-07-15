@@ -34,6 +34,13 @@
                     class="btn-success"
                     invisible="not is_unassigned"
                 />
+                <button
+                    name="action_link_opportunity"
+                    type="object"
+                    string="Vincular Oportunidade"
+                    class="btn-warning"
+                    invisible="not is_unassigned or has_crm_lead"
+                />
             </list>
         </field>
     </record>

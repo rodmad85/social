@@ -47,6 +47,21 @@ class MailWhatsappConversation(models.Model):
     is_unassigned = fields.Boolean(string="Não atribuída", readonly=True)
     partner_user_id = fields.Many2one("res.users", string="Usuário", readonly=True)
     display_name = fields.Char(string="Destinatário", readonly=True)
+    has_crm_lead = fields.Boolean(string="Vinculada a Oportunidade", readonly=True)
+
+    def action_link_opportunity(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Vincular Oportunidade",
+            "res_model": "whatsapp.link.opportunity.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_channel_id": self.channel_id.id,
+                "default_partner_id": self.partner_id.id if self.partner_id else False,
+            },
+        }
 
     def action_auto_assign_by_phone(self):
         self.env.cr.execute("""
@@ -171,7 +186,8 @@ class MailWhatsappConversation(models.Model):
                             LIMIT 1
                         )
                     ) THEN TRUE ELSE FALSE END AS is_unassigned,
-                    COALESCE(contact_match.contact_name, rp.name, dc.name, 'WhatsApp') AS display_name
+                    COALESCE(contact_match.contact_name, rp.name, dc.name, 'WhatsApp') AS display_name,
+                    CASE WHEN crm_link.id IS NOT NULL THEN TRUE ELSE FALSE END AS has_crm_lead
                 FROM latest_messages lm
                 JOIN discuss_channel dc ON dc.id = lm.channel_id
                 LEFT JOIN res_partner rp ON rp.id = lm.author_id
@@ -192,6 +208,7 @@ class MailWhatsappConversation(models.Model):
                       AND (rp3.phone_sanitized = '+' || dc.gateway_channel_token OR (rp3.phone_sanitized = '+' || left(dc.gateway_channel_token, 4) || '9' || substring(dc.gateway_channel_token, 5) AND dc.gateway_channel_token ~ '^55[0-9]{2}'))
                     LIMIT 1
                 ) contact_match ON TRUE
+                LEFT JOIN mail_whatsapp_chatter_link crm_link ON crm_link.channel_id = lm.channel_id AND crm_link.res_model = 'crm.lead'
             )
         """)
         self.action_auto_assign_by_phone()
