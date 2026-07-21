@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="whatsapp_assign_contact_wizard_form_view">
+        <field name="name">whatsapp.assign.contact.wizard.form</field>
+        <field name="model">whatsapp.assign.contact.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="channel_id" invisible="1" />
+                    <field name="phone" invisible="1" />
+                    <field name="partner_id" 
+                           string="Contact" 
+                           can_create="true" 
+                           can_write="true"
+                           context="{'default_phone': phone}" />
+                </group>
+                <footer>
+                    <button
+                        name="action_assign"
+                        type="object"
+                        string="Confirm"
+                        class="btn-primary"
+                    />
+                    <button
+                        string="Cancel"
+                        class="btn-secondary"
+                        special="cancel"
+                    />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

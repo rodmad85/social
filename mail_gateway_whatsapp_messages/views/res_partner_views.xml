@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="res_partner_whatsapp_phone_tree_view">
+        <field name="name">res.partner.whatsapp.phone.tree</field>
+        <field name="model">res.partner.whatsapp.phone</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="phone" required="1" />
+                <field name="description" />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="res_partner_whatsapp_phone_form_view">
+        <field name="name">res.partner.whatsapp.phone.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales_purchases']" position="after">
+                <page name="whatsapp_phones" string="WhatsApp Phones" groups="mail_gateway.gateway_user">
+                    <group>
+                        <field name="whatsapp_phone_ids" nolabel="1" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
