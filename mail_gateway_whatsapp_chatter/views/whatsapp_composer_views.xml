@@ -5,6 +5,14 @@
         <field name="model">whatsapp.composer</field>
         <field name="inherit_id" ref="mail_gateway_whatsapp.whatsapp_composer_form_view"/>
         <field name="arch" type="xml">
+            <field name="gateway_id" position="after">
+                <field name="has_multiple_phones" invisible="1" />
+                <field
+                    name="phone_number"
+                    invisible="not has_multiple_phones"
+                    options="{'no_create': True, 'no_open': True}"
+                />
+            </field>
             <field name="template_id" position="attributes">
                 <attribute name="domain">[('gateway_id', '=', gateway_id), ('state', '=', 'approved'), ('is_supported', '=', True), '|', ('model', '=', res_model), ('model', '=', 'res.partner')]</attribute>
             </field>

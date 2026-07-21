@@ -63,18 +63,9 @@ class MailWhatsappChatterLink(models.Model):
         ).sorted(key=lambda m: m.id)
         if not messages:
             return
-        follower_partners = (
-            self.env["mail.followers"]
-            .sudo()
-            .search([
-                ("res_model", "=", record._name),
-                ("res_id", "=", record.id),
-            ])
-            .partner_id
-        )
         for message in messages:
             author_id = message.author_id.id if message.author_id and message.author_id._name == "res.partner" else False
-            new_message = record.sudo().message_post(
+            record.sudo().message_post(
                 body=message.body,
                 author_id=author_id,
                 gateway_type="whatsapp",
@@ -82,8 +73,3 @@ class MailWhatsappChatterLink(models.Model):
                 subtype_xmlid="mail.mt_comment",
                 attachment_ids=message.attachment_ids.ids,
             )
-            for partner in follower_partners:
-                partner.sudo()._bus_send_store(
-                    new_message.sudo(),
-                    notification_type="mail.record/insert",
-                )

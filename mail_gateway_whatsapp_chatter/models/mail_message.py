@@ -299,13 +299,92 @@ class ResPartner(models.Model):
 class WhatsappComposer(models.TransientModel):
     _inherit = "whatsapp.composer"
 
+    phone_number = fields.Selection(
+        selection="_selection_phone_number",
+        string="Phone Number",
+    )
+    has_multiple_phones = fields.Boolean(
+        compute="_compute_has_multiple_phones",
+    )
+
+    @api.depends("res_model", "res_id")
+    def _compute_has_multiple_phones(self):
+        for wizard in self:
+            options = wizard._selection_phone_number()
+            wizard.has_multiple_phones = len(options) > 1
+
+    def _selection_phone_number(self):
+        if not self or not self.res_model or not self.res_id:
+            return [("mobile", "Mobile"), ("phone", "Phone")]
+        record = self.env[self.res_model].browse(self.res_id)
+        partner = record if record._name == "res.partner" else record.partner_id
+        if not partner:
+            return [("mobile", "Mobile"), ("phone", "Phone")]
+        options = []
+        if partner.mobile:
+            options.append(("mobile", "Mobile: %s" % partner.mobile))
+        if partner.phone:
+            options.append(("phone", "Phone: %s" % partner.phone))
+        for wp in partner.whatsapp_phone_ids:
+            label = "%s: %s" % (wp.description or "WhatsApp", wp.phone)
+            options.append(("whatsapp_%d" % wp.id, label))
+        return options or [("mobile", "Mobile"), ("phone", "Phone")]
+
+    @api.model
+    def default_get(self, fields):
+        res = super().default_get(fields)
+        if "phone_number" in fields or "has_multiple_phones" in fields:
+            res_model = res.get("res_model")
+            res_id = res.get("res_id")
+            if res_model and res_id:
+                record = self.env[res_model].browse(res_id)
+                partner = record if record._name == "res.partner" else record.partner_id
+                if partner:
+                    phones = []
+                    if partner.mobile:
+                        phones.append("mobile")
+                    if partner.phone:
+                        phones.append("phone")
+                    for wp in partner.whatsapp_phone_ids:
+                        phones.append("whatsapp_%d" % wp.id)
+                    default_number = res.get("number_field_name") or "mobile"
+                    if default_number in phones:
+                        res["phone_number"] = default_number
+                    elif phones:
+                        res["phone_number"] = phones[0]
+                    res["has_multiple_phones"] = len(phones) > 1
+        return res
+
     def _action_send_whatsapp(self):
         record = self.env[self.res_model].browse(self.res_id)
         if not record:
             return
-        channel = record._whatsapp_get_channel(
-            self.number_field_name, self.gateway_id
-        )
+        phone = self.phone_number or self.number_field_name or "mobile"
+        if phone.startswith("whatsapp_"):
+            wp_id = int(phone.split("_")[1])
+            wp = self.env["res.partner.whatsapp.phone"].browse(wp_id)
+            sanitized_number = (wp.phone_sanitized or wp.phone).replace("+", "")
+            partner = record._whatsapp_get_partner()
+            gateway = self.gateway_id
+            if not self.env["res.partner.gateway.channel"].search([
+                ("partner_id", "=", partner.id),
+                ("gateway_id", "=", gateway.id),
+                ("gateway_token", "=", sanitized_number),
+            ]):
+                self.env["res.partner.gateway.channel"].create({
+                    "name": gateway.name,
+                    "partner_id": partner.id,
+                    "gateway_id": gateway.id,
+                    "gateway_token": sanitized_number,
+                })
+            channel = self.env["mail.gateway.whatsapp"]._get_channel(
+                gateway, sanitized_number, {
+                    "contacts": [{"wa_id": sanitized_number, "profile": {"name": partner.display_name}}],
+                    "messages": [{"from": sanitized_number}],
+                }, force_create=True,
+            )
+        else:
+            channel = record._whatsapp_get_channel(phone, self.gateway_id)
         self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
         if not self.env["discuss.channel.member"].sudo().search_count([
             ("channel_id", "=", channel.id),
