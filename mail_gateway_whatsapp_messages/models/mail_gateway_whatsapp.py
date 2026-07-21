@@ -66,17 +66,31 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 self._assign_team_lead(channel)
 
     def _get_channel_by_phone_or_partner(self, gateway, phone, author=None):
-        chat_id = gateway._get_channel_id(phone)
-        if chat_id:
-            channel = self.env["discuss.channel"].browse(chat_id)
-            if channel.exists():
-                return channel
+        tokens_to_try = [str(phone)]
+        if not str(phone).startswith("+"):
+            tokens_to_try.append("+" + str(phone))
+        if len(str(phone)) == 12:
+            tokens_to_try.append(str(phone)[:4] + "9" + str(phone)[4:])
+        elif len(str(phone)) == 13:
+            tokens_to_try.append(str(phone)[:4] + str(phone)[5:])
+        for candidate in tokens_to_try:
+            chat_id = gateway._get_channel_id(candidate)
+            if chat_id:
+                channel = self.env["discuss.channel"].browse(chat_id)
+                if channel.exists():
+                    return channel
         if author and author._name == "res.partner":
             gc = self.env["res.partner.gateway.channel"].search([
                 ("partner_id", "=", author.id),
                 ("gateway_id", "=", gateway.id),
             ], limit=1)
             if gc:
+                for candidate in tokens_to_try:
+                    chat_id = gateway._get_channel_id(candidate)
+                    if chat_id:
+                        channel = self.env["discuss.channel"].browse(chat_id)
+                        if channel.exists():
+                            return channel
                 chat_id = gateway._get_channel_id(gc.gateway_token)
                 if chat_id:
                     channel = self.env["discuss.channel"].browse(chat_id)

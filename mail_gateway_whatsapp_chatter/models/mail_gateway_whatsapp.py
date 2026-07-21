@@ -193,9 +193,17 @@ class MailGatewayWhatsappService(models.AbstractModel):
         )
 
     def _get_channel(self, gateway, token, update, force_create=False):
-        chat_id = gateway._get_channel_id(token)
-        if chat_id:
-            return super()._get_channel(gateway, token, update, force_create=force_create)
+        tokens_to_try = [str(token)]
+        if not str(token).startswith("+"):
+            tokens_to_try.append("+" + str(token))
+        if len(str(token)) == 12:
+            tokens_to_try.append(str(token)[:4] + "9" + str(token)[4:])
+        elif len(str(token)) == 13:
+            tokens_to_try.append(str(token)[:4] + str(token)[5:])
+        for candidate in tokens_to_try:
+            chat_id = gateway._get_channel_id(candidate)
+            if chat_id:
+                return super()._get_channel(gateway, token, update, force_create=force_create)
         author = self._get_author(gateway, update)
         if author and author._name == "res.partner":
             gc = self.env["res.partner.gateway.channel"].search([
@@ -209,6 +217,10 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     ("gateway_id", "=", gateway.id),
                 ], limit=1)
             if gc:
+                for candidate in tokens_to_try:
+                    existing_chat_id = gateway._get_channel_id(candidate)
+                    if existing_chat_id:
+                        return self.env["discuss.channel"].browse(existing_chat_id)
                 existing_chat_id = gateway._get_channel_id(gc.gateway_token)
                 if existing_chat_id:
                     return self.env["discuss.channel"].browse(existing_chat_id)
