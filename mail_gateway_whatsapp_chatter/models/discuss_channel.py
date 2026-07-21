@@ -14,7 +14,7 @@ class DiscussChannel(models.Model):
             gateway_type=gateway_type,
             **kwargs,
         )
-        if self.gateway_id and self.gateway_id.gateway_type == "whatsapp" and message.message_type == "comment":
+        if self.gateway_id and self.gateway_id.gateway_type == "whatsapp" and message.message_type == "comment" and not message.gateway_message_id :
             self.env["mail.gateway.whatsapp"]._post_to_linked_threads(
                 message.body, message.attachment_ids.ids, message.author_id, self
             )
