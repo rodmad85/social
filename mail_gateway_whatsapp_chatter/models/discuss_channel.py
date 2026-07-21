@@ -19,3 +19,16 @@ class DiscussChannel(models.Model):
                 message.body, message.attachment_ids.ids, message.author_id, self
             )
         return message
+
+    def _notify_thread(self, message, msg_vals=False, **kwargs):
+        rdata = super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
+        if self.gateway_id and self.gateway_id.gateway_type == "whatsapp" and message.message_type == "comment":
+            for member in self.channel_member_ids:
+                partner = member.partner_id
+                if partner and partner.user_ids:
+                    for user in partner.user_ids.filtered(lambda u: u.active):
+                        user._bus_send_store(
+                            message.with_user(user).with_context(allowed_company_ids=[]),
+                            notification_type="mail.record/insert",
+                        )
+        return rdata
