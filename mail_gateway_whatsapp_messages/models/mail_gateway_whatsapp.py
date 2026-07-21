@@ -42,16 +42,19 @@ class MailGatewayWhatsappService(models.AbstractModel):
 
     def _receive_update(self, gateway, update):
         affected_phones = set()
+        first_value = None
         if update:
             for entry in update["entry"]:
                 for change in entry["changes"]:
                     if change["field"] != "messages":
                         continue
+                    if first_value is None:
+                        first_value = change["value"]
                     for message in change["value"].get("messages", []):
                         if message.get("from"):
                             affected_phones.add(message["from"])
         super()._receive_update(gateway, update)
-        author = self._get_author(gateway, update)
+        author = self._get_author(gateway, first_value) if first_value else False
         for phone in affected_phones:
             channel = self._get_channel_by_phone_or_partner(gateway, phone, author)
             if not channel:
