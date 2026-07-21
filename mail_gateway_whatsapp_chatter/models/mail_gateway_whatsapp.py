@@ -80,7 +80,10 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     )
 
     def _get_author(self, gateway, update):
-        author_id = update.get("messages")[0].get("from")
+        messages = update.get("messages")
+        if not messages:
+            return False
+        author_id = messages[0].get("from")
         if author_id:
             gateway_partner = self.env["res.partner.gateway.channel"].search(
                 [

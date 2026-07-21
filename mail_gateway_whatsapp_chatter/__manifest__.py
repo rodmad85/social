@@ -20,6 +20,7 @@
             "mail_gateway_whatsapp_chatter/static/src/js/composer_gateway_patch.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/js/whatsapp_delivery_patch.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/js/chatter_composer_patch.esm.js",
+            "mail_gateway_whatsapp_chatter/static/src/js/chatter_reload_patch.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/scss/mail_whatsapp_chatter.scss",
             "mail_gateway_whatsapp_chatter/static/src/xml/chatter_whatsapp_button.xml",
             "mail_gateway_whatsapp_chatter/static/src/xml/whatsapp_gateway_follower.xml",
