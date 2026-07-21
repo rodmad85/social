@@ -59,7 +59,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
             if not record.exists():
                 continue
             author_id = author.id if author and author._name == "res.partner" else False
-            record.sudo().message_post(
+            message = record.sudo().message_post(
                 body=body,
                 author_id=author_id,
                 gateway_type="whatsapp",
@@ -67,6 +67,17 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 subtype_xmlid="mail.mt_comment",
                 attachment_ids=attachment_ids,
             )
+            if message:
+                partners = record.message_follower_ids.partner_id
+                active_users = self.env["res.users"].search([
+                    ("partner_id", "in", partners.ids),
+                    ("active", "=", True),
+                ])
+                for user in active_users:
+                    user._bus_send_store(
+                        message.with_user(user).with_context(allowed_company_ids=[]),
+                        notification_type="mail.record/insert",
+                    )
 
     def _get_author(self, gateway, update):
         author_id = update.get("messages")[0].get("from")
