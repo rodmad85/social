@@ -212,46 +212,42 @@ class MailThread(models.AbstractModel):
                 as_thread=True,
             )
             for partner in gateway_followers:
-                gateway_channels = partner.gateway_channel_ids
-                if not gateway_channels.filtered(
-                    lambda gc: gc.gateway_id.gateway_type == "whatsapp"
-                ):
+                gateway = (
+                    self.env["mail.gateway"]
+                    .sudo()
+                    .search(
+                        [("gateway_type", "=", "whatsapp")], limit=1
+                    )
+                )
+                if gateway:
                     phone = partner.mobile or partner.phone
                     if phone:
                         sanitized_phone = self._phone_format(number=phone)
                         sanitized = sanitized_phone.replace("+", "") if sanitized_phone else "".join(c for c in phone if c.isdigit())
-                        gateway = (
-                            self.env["mail.gateway"]
+                        existing = (
+                            self.env["res.partner.gateway.channel"]
                             .sudo()
                             .search(
-                                [("gateway_type", "=", "whatsapp")], limit=1
+                                [
+                                    ("partner_id", "=", partner.id),
+                                    ("gateway_id", "=", gateway.id),
+                                    ("gateway_token", "=", sanitized),
+                                ],
+                                limit=1,
                             )
                         )
-                        if gateway:
-                            existing = (
-                                self.env["res.partner.gateway.channel"]
-                                .sudo()
-                                .search(
-                                    [
-                                        ("partner_id", "=", partner.id),
-                                        ("gateway_id", "=", gateway.id),
-                                    ],
-                                    limit=1,
-                                )
+                        if not existing:
+                            self.env[
+                                "res.partner.gateway.channel"
+                            ].sudo().create(
+                                {
+                                    "partner_id": partner.id,
+                                    "gateway_id": gateway.id,
+                                    "gateway_token": sanitized,
+                                }
                             )
-                            if not existing:
-                                self.env[
-                                    "res.partner.gateway.channel"
-                                ].sudo().create(
-                                    {
-                                        "name": gateway.name,
-                                        "partner_id": partner.id,
-                                        "gateway_id": gateway.id,
-                                        "gateway_token": sanitized,
-                                    }
-                                )
-                            partner = self.env["res.partner"].browse(partner.id)
-                            gateway_channels = partner.gateway_channel_ids
+                partner = self.env["res.partner"].browse(partner.id)
+                gateway_channels = partner.gateway_channel_ids
                 store.add(
                     "res.partner",
                     {
@@ -293,6 +289,39 @@ class ResPartner(models.Model):
                     ],
                 },
             )
+        return res
+
+
+class ResPartnerGatewayChannel(models.Model):
+    _inherit = "res.partner.gateway.channel"
+
+    def _mail_format(self):
+        res = super()._mail_format()
+        partner = self.partner_id
+        token = (self.gateway_token or "").replace("+", "")
+        is_mobile = False
+        if partner:
+            if partner.mobile:
+                mobile_digits = "".join(c for c in partner.mobile if c.isdigit())
+                if token and token == mobile_digits:
+                    res["name"] = "Mobile: %s" % partner.mobile
+                    is_mobile = True
+            if not is_mobile and partner.phone:
+                phone_digits = "".join(c for c in partner.phone if c.isdigit())
+                if token and token == phone_digits:
+                    res["name"] = "Phone: %s" % partner.phone
+            if not is_mobile:
+                for wp in partner.whatsapp_phone_ids:
+                    wp_digits = "".join(c for c in (wp.phone or "") if c.isdigit())
+                    if token and token == wp_digits:
+                        label = wp.description or "WhatsApp"
+                        res["name"] = "%s: %s" % (label, wp.phone)
+                        break
+            if not is_mobile and token:
+                res["name"] = token
+        elif token:
+            res["name"] = token
+        res["is_mobile"] = is_mobile
         return res
 
 

@@ -25,20 +25,13 @@ patch(GatewayFollower.prototype, {
         const whatsappChannels = this.props.follower.gateway_channels.filter(
             (channel) => channel.gateway?.type === "whatsapp"
         );
-        if (whatsappChannels.length === 1 && !this.channel) {
-            this.channel = whatsappChannels[0].id;
-            this.props.composer.thread.gateway_notifications.push(
-                this._getMessageData()
-            );
-            this.props.composer.thread.isGateway = true;
-        }
-        if (whatsappChannels.length > 1 && !this.channel) {
-            this.channel = whatsappChannels[0].id;
-            this.props.composer.thread.gateway_notifications.push(
-                this._getMessageData()
-            );
-            this.props.composer.thread.isGateway = true;
-        }
+        if (whatsappChannels.length === 0 || this.channel) return;
+        const mobileChannel = whatsappChannels.find(ch => ch.is_mobile);
+        this.channel = mobileChannel ? mobileChannel.id : whatsappChannels[0].id;
+        this.props.composer.thread.gateway_notifications.push(
+            this._getMessageData()
+        );
+        this.props.composer.thread.isGateway = true;
     },
     onChangeTemplate(ev) {
         const templateId = parseInt(ev.target.value, 10);
