@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="mail_whatsapp_template_send_tree_view">
+        <field name="name">mail.whatsapp.template.send.tree</field>
+        <field name="model">mail.whatsapp.template.send</field>
+        <field name="arch" type="xml">
+            <list string="Template Sends pendentes de resposta">
+                <field name="send_date" string="Data/Hora Envio" />
+                <field name="user_id" string="Usuário" />
+                <field name="opportunity_id" string="Oportunidade" />
+                <field name="partner_id" string="Contato" />
+                <field name="remaining_time" string="Tempo Restante (h)" />
+                <field name="template_id" string="Template" />
+                <field name="state" string="Estado" widget="badge" />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_template_send_search_view">
+        <field name="name">mail.whatsapp.template.send.search</field>
+        <field name="model">mail.whatsapp.template.send</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" string="Contato" />
+                <field name="user_id" string="Usuário" />
+                <field name="opportunity_id" string="Oportunidade" />
+                <field name="template_id" string="Template" />
+                <filter
+                    name="filter_waiting"
+                    string="Aguardando Resposta"
+                    domain="[('state', '=', 'waiting')]"
+                />
+                <filter
+                    name="filter_expired"
+                    string="Expirado"
+                    domain="[('state', '=', 'expired')]"
+                />
+                <separator />
+                <group expand="0" string="Agrupar por">
+                    <filter
+                        name="group_template"
+                        string="Template"
+                        context="{'group_by': 'template_id'}"
+                    />
+                    <filter
+                        name="group_partner"
+                        string="Contato"
+                        context="{'group_by': 'partner_id'}"
+                    />
+                    <filter
+                        name="group_state"
+                        string="Estado"
+                        context="{'group_by': 'state'}"
+                    />
+                    <filter
+                        name="group_user"
+                        string="Usuário"
+                        context="{'group_by': 'user_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_template_send">
+        <field name="name">Envios de Template pendentes</field>
+        <field name="res_model">mail.whatsapp.template.send</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="mail_whatsapp_template_send_tree_view" />
+        <field name="search_view_id" ref="mail_whatsapp_template_send_search_view" />
+        <field name="domain">[('state', '=', 'waiting')]</field>
+        <field name="context">{'search_default_filter_waiting': 1}</field>
+        <field name="help" type="html">
+            <p>Não há envios de template pendentes de resposta no momento.</p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_mail_whatsapp_template_send"
+        name="Envios pendentes"
+        parent="mail_gateway_whatsapp_messages.menu_mail_whatsapp_messages_root"
+        action="action_mail_whatsapp_template_send"
+        sequence="10"
+        groups="mail_gateway.gateway_user"
+    />
+</odoo>

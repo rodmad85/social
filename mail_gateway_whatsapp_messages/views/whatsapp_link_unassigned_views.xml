@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="whatsapp_link_unassigned_wizard_form_view">
+        <field name="name">whatsapp.link.unassigned.wizard.form</field>
+        <field name="model">whatsapp.link.unassigned.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Vincular Conversas Não Atribuídas a Oportunidades">
+                <footer>
+                    <button
+                        name="action_link"
+                        type="object"
+                        string="Vincular Não Atribuídas"
+                        class="btn-primary"
+                    />
+                    <button
+                        string="Cancelar"
+                        class="btn-secondary"
+                        special="cancel"
+                    />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_whatsapp_link_unassigned">
+        <field name="name">Vincular Não Atribuídas a Oportunidades</field>
+        <field name="res_model">whatsapp.link.unassigned.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

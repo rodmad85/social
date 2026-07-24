@@ -203,7 +203,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
         for candidate in tokens_to_try:
             chat_id = gateway._get_channel_id(candidate)
             if chat_id:
-                return super()._get_channel(gateway, token, update, force_create=force_create)
+                return super()._get_channel(gateway, candidate, update, force_create=force_create)
         author = self._get_author(gateway, update)
         if author and author._name == "res.partner":
             gc = self.env["res.partner.gateway.channel"].search([

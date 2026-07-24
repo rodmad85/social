@@ -1,7 +1,7 @@
 {
     "name": "Mail WhatsApp Gateway Chatter",
     "summary": "Bidirectional message sync between chatter and WhatsApp",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.0.2",
     "license": "AGPL-3",
     "author": "Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/social",
@@ -9,9 +9,9 @@
     "data": [
         "security/ir.model.access.csv",
         "security/security.xml",
-
         "views/mail_whatsapp_chatter_views.xml",
         "views/whatsapp_composer_views.xml",
+        "views/mail_template_send_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

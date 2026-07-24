@@ -63,6 +63,15 @@ class MailWhatsappConversation(models.Model):
             },
         }
 
+    def action_link_unassigned(self):
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Vincular Não Atribuídas",
+            "res_model": "whatsapp.link.unassigned.wizard",
+            "view_mode": "form",
+            "target": "new",
+        }
+
     def action_auto_assign_by_phone(self):
         self.env.cr.execute("""
             INSERT INTO discuss_channel_member (partner_id, channel_id, new_message_separator)
@@ -176,15 +185,6 @@ class MailWhatsappConversation(models.Model):
                         WHERE dcm.channel_id = lm.channel_id
                           AND ru.active = True
                         LIMIT 1
-                    ) AND (
-                        COALESCE(rp_match.user_id, rp.user_id) IS NULL
-                        OR NOT EXISTS (
-                            SELECT 1
-                            FROM res_users ru
-                            WHERE ru.id = COALESCE(rp_match.user_id, rp.user_id)
-                              AND ru.active = True
-                            LIMIT 1
-                        )
                     ) THEN TRUE ELSE FALSE END AS is_unassigned,
                     COALESCE(contact_match.contact_name, rp.name, dc.name, 'WhatsApp') AS display_name,
                     CASE WHEN crm_link.id IS NOT NULL THEN TRUE ELSE FALSE END AS has_crm_lead

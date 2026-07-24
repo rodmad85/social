@@ -11,3 +11,5 @@ access_assign_contact_wizard_user,assign.contact.wizard.user,model_whatsapp_assi
 access_assign_contact_wizard_admin,assign.contact.wizard.admin,model_whatsapp_assign_contact_wizard,base.group_system,1,1,1,1
 access_link_opportunity_wizard_user,link.opportunity.wizard.user,model_whatsapp_link_opportunity_wizard,mail_gateway.gateway_user,1,1,1,1
 access_link_opportunity_wizard_admin,link.opportunity.wizard.admin,model_whatsapp_link_opportunity_wizard,base.group_system,1,1,1,1
+access_link_unassigned_wizard_user,link.unassigned.wizard.user,model_whatsapp_link_unassigned_wizard,mail_gateway.gateway_user,1,1,1,1
+access_link_unassigned_wizard_admin,link.unassigned.wizard.admin,model_whatsapp_link_unassigned_wizard,base.group_system,1,1,1,1
