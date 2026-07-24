@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
     <t t-inherit="mail_gateway.GatewayFollowerView" t-inherit-mode="extension">
+        <xpath expr="//select[@name='gatewayChannel']" position="attributes">
+            <attribute name="t-att-value">state.channel</attribute>
+        </xpath>
         <xpath expr="//div[hasclass('o_gateway_composer_selector')]" position="inside">
             <select
                 name="whatsappTemplate"

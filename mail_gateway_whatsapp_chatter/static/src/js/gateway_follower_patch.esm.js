@@ -6,7 +6,7 @@ import {useService} from "@web/core/utils/hooks";
 patch(GatewayFollower.prototype, {
     setup() {
         super.setup(...arguments);
-        this.state = useState({templates: [], selectedTemplateId: false});
+        this.state = useState({templates: [], selectedTemplateId: false, channel: false});
         this.orm = useService("orm");
         onMounted(async () => {
             await this._loadTemplates();
@@ -22,12 +22,9 @@ patch(GatewayFollower.prototype, {
         this.state.templates = templates;
     },
     _autoSelectWhatsapp() {
-        const whatsappChannels = this.props.follower.gateway_channels.filter(
-            (channel) => channel.gateway?.type === "whatsapp"
-        );
-        if (whatsappChannels.length === 0 || this.channel) return;
-        const mobileChannel = whatsappChannels.find(ch => ch.is_mobile);
-        this.channel = mobileChannel ? mobileChannel.id : whatsappChannels[0].id;
+        const channels = this.props.follower.gateway_channels;
+        if (channels.length === 0 || this.state.channel) return;
+        this.state.channel = channels[0].id;
         this.props.composer.thread.gateway_notifications.push(
             this._getMessageData()
         );
@@ -37,7 +34,7 @@ patch(GatewayFollower.prototype, {
         const templateId = parseInt(ev.target.value, 10);
         this.state.selectedTemplateId = templateId;
         const notifIndex = this.props.composer.thread.gateway_notifications.findIndex(
-            (n) => n.gateway_channel_id === this.channel
+            (n) => n.gateway_channel_id === this.state.channel
         );
         if (notifIndex !== -1) {
             this.props.composer.thread.gateway_notifications[notifIndex].whatsapp_template_id =
@@ -50,9 +47,9 @@ patch(GatewayFollower.prototype, {
         }
     },
     onChangeGatewayChannel(ev) {
-        const prevChannel = this.channel;
-        this.channel = parseInt(ev.target.value, 10);
-        if (prevChannel && this.channel) {
+        const prevChannel = this.state.channel;
+        this.state.channel = parseInt(ev.target.value, 10);
+        if (prevChannel && this.state.channel) {
             const notifIndex = this.props.composer.thread.gateway_notifications.findIndex(
                 (n) => n.gateway_channel_id === prevChannel
             );
@@ -60,7 +57,7 @@ patch(GatewayFollower.prototype, {
                 this.props.composer.thread.gateway_notifications.splice(notifIndex, 1);
             }
         }
-        if (this.channel) {
+        if (this.state.channel) {
             this.props.composer.thread.gateway_notifications.push(
                 this._getMessageData()
             );
@@ -73,7 +70,7 @@ patch(GatewayFollower.prototype, {
         const data = {
             partner_id: this.props.follower.id,
             channel_type: "gateway",
-            gateway_channel_id: this.channel,
+            gateway_channel_id: this.state.channel,
         };
         if (this.state.selectedTemplateId) {
             data.whatsapp_template_id = this.state.selectedTemplateId;
