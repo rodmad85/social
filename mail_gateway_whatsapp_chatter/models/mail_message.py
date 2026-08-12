@@ -36,65 +36,69 @@ class MailMessage(models.Model):
         return result
 
     def _send_to_gateway_thread(self, gateway_channel_id):
-        if gateway_channel_id.gateway_id.gateway_type == "whatsapp":
-            chat_id = gateway_channel_id.gateway_id._get_channel_id(
-                gateway_channel_id.gateway_token
-            )
-            if not chat_id:
-                token = gateway_channel_id.gateway_token
-                gateway = gateway_channel_id.gateway_id
-                partner = gateway_channel_id.partner_id
-                members = [
-                    Command.create({"partner_id": p.id, "unpin_dt": False})
-                    for p in gateway.member_ids.partner_id
-                ]
-                members.append(
-                    Command.create({"partner_id": partner.id})
-                )
-                self.env["discuss.channel"].create({
-                    "gateway_channel_token": token,
-                    "gateway_id": gateway.id,
-                    "channel_type": "gateway",
-                    "channel_member_ids": members,
-                    "company_id": gateway.company_id.id,
-                    "name": partner.display_name,
-                })
-            if self.model and self.res_id:
-                record = self.env[self.model].browse(self.res_id)
-                if (
-                    record.exists()
-                    and "user_id" in record._fields
-                    and record.user_id
-                    and record.user_id != self.env.user
-                    and not self.env.user.has_group("sales_team.group_sale_manager")
-                    and not self.env.user.has_group("crm_commissions.group_crm_commission_sdr")
-                ):
-                    raise UserError(
-                        self.env._(
-                            "Only the assigned salesperson can send WhatsApp messages for this record."
-                        )
-                    )
-                chat_id = gateway_channel_id.gateway_id._get_channel_id(
-                    gateway_channel_id.gateway_token
-                )
-                channel = self.env["discuss.channel"].browse(chat_id)
-                if channel:
-                    self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
-        result = super()._send_to_gateway_thread(gateway_channel_id)
-        chat_id = gateway_channel_id.gateway_id._get_channel_id(
-            gateway_channel_id.gateway_token
+        if gateway_channel_id.gateway_id.gateway_type != "whatsapp":
+            return super()._send_to_gateway_thread(gateway_channel_id)
+        gateway = gateway_channel_id.gateway_id
+        partner = gateway_channel_id.partner_id
+        service = self.env["mail.gateway.whatsapp"]
+        update = {
+            "contacts": [{
+                "wa_id": gateway_channel_id.gateway_token,
+                "profile": {"name": partner.display_name},
+            }],
+            "messages": [{"from": gateway_channel_id.gateway_token}],
+        }
+        channel = service._get_channel(
+            gateway, gateway_channel_id.gateway_token, update, force_create=True
         )
-        channel = self.env["discuss.channel"].browse(chat_id)
-        if channel and gateway_channel_id.gateway_id.gateway_type == "whatsapp":
-            if not self.env["discuss.channel.member"].sudo().search_count([
-                ("channel_id", "=", channel.id),
-                ("partner_id", "=", self.env.user.partner_id.id),
-            ]):
-                self.env["discuss.channel.member"].sudo().create({
-                    "channel_id": channel.id,
-                    "partner_id": self.env.user.partner_id.id,
-                })
-        return result
+        if not channel:
+            return super()._send_to_gateway_thread(gateway_channel_id)
+        if self.model and self.res_id:
+            record = self.env[self.model].browse(self.res_id)
+            if (
+                record.exists()
+                and "user_id" in record._fields
+                and record.user_id
+                and record.user_id != self.env.user
+                and not self.env.user.has_group("sales_team.group_sale_manager")
+                and not self.env.user.has_group("crm_commissions.group_crm_commission_sdr")
+            ):
+                raise UserError(
+                    self.env._(
+                        "Only the assigned salesperson can send WhatsApp messages for this record."
+                    )
+                )
+            self.env["mail.whatsapp.chatter.link"].get_or_create(channel, record)
+        if not self.env["discuss.channel.member"].sudo().search_count([
+            ("channel_id", "=", channel.id),
+            ("partner_id", "=", self.env.user.partner_id.id),
+        ]):
+            self.env["discuss.channel.member"].sudo().create({
+                "channel_id": channel.id,
+                "partner_id": self.env.user.partner_id.id,
+            })
+        posted_message = channel.message_post(**self._get_gateway_thread_message_vals())
+        if not self.gateway_type:
+            self.gateway_type = gateway_channel_id.gateway_id.gateway_type
+        notification_vals = {
+            "notification_status": "sent",
+            "mail_message_id": self.id,
+            "gateway_channel_id": channel.id,
+            "notification_type": "gateway",
+            "gateway_type": gateway_channel_id.gateway_id.gateway_type,
+        }
+        channel_notif = self.env["mail.notification"].search([
+            ("mail_message_id", "=", posted_message.id),
+            ("notification_type", "=", "gateway"),
+        ], limit=1)
+        if channel_notif:
+            notification_vals["gateway_message_id"] = channel_notif.gateway_message_id
+            if channel_notif.failure_type == "unknown":
+                notification_vals["failure_type"] = "unknown"
+                notification_vals["notification_status"] = "exception"
+                notification_vals["failure_reason"] = channel_notif.failure_reason
+        self.env["mail.notification"].create(notification_vals)
+        return {}
 
     def _get_gateway_thread_message_vals(self):
         vals = super()._get_gateway_thread_message_vals()

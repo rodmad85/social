@@ -1,9 +1,11 @@
 # Como funciona o envio e recebimento de mensagens pelo WhatsApp
-### Explicação simplificada para o usuário
+### Explicação simplificada para o usuário com navegação por menus
 
 ---
 
 ## 1. Quando você recebe uma mensagem do WhatsApp
+
+### Onde ver: Menu **Conversas** (ícone do WhatsApp no menu **Discuss**)
 
 1. **A Meta (WhatsApp) envia um aviso automático para o Odoo**
    Sempre que alguém manda uma mensagem para o seu número comercial, o WhatsApp envia um aviso para o Odoo. Esse aviso inclui o número de quem enviou, o texto da mensagem, quaisquer fotos/anexos e, se for uma resposta, qual mensagem original está sendo respondida.
@@ -21,7 +23,7 @@
 4. **A mensagem aparece no chat do canal do gateway**
    O texto, anexos e link de localização (se houver) são postados no canal de WhatsApp como uma mensagem normal.
 
-5. ** automaticamente o Odoo "espelha" essa mensagem nos registros de negócio vinculados**
+5. **Automaticamente o Odoo "espelha" essa mensagem nos registros de negócio vinculados**
    Quando existe um vínculo entre o chat do WhatsApp e um registro (por exemplo, um lead ou pedido de venda), a mensagem é copiada automaticamente para o chatter (feed de atividades) desse registro. Isso acontece em tempo real.
 
 6. **Se o chat acabou de ser vinculado a um registro pela primeira vez**
@@ -30,13 +32,17 @@
 7. **Se ninguém estiver acompanhando aquele chat**
    Quando uma mensagem chega de um número desconhecido e nenhum vendedor está ativo naquele chat, o sistema avisa os gerentes de vendas e SDRs, para que alguém assuma a conversa.
 
+   > **Onde ver o aviso:** Menu **Conversas** ou **Não Atribuídas** (ambos sob o menu **WhatsApp** no Discuss).
+
 ---
 
 ## 2. Quando você envia uma mensagem pelo WhatsApp
 
+### Onde enviar: Menu **Conversas** (WhatsApp no Discuss) ou pelo chatter de qualquer registro de negócio
+
 1. **Você inicia o envio de duas formas**
    - **Pelo chatter de um registro** (lead, pedido de venda etc.): ao clicar no botão de WhatsApp no registro, abre um pequeno formulário onde você escolhe o telefone do contato e escreve a mensagem.
-   - **Pelo chat do gateway**: você pode digitar diretamente no canal de WhatsApp do gateway.
+   - **Pelo chat do gateway**: você pode digitar diretamente no canal de WhatsApp do gateway (Menu **Conversas** → clicar no chat desejado).
 
 2. **O Odoo resolve para qual número enviar**
    O sistema identifica o telefone selecionado (celular, telefone fixo ou número específico do WhatsApp do contato), sanitiza (remove o + e formata) e encontra ou cria o canal de chat correspondente.
@@ -56,6 +62,8 @@
 6. **O status da mensagem é atualizado**
    - Se o envio foi bem-sucedido, a mensagem no Odoo é marcada como "enviada" e recebe o ID de confirmação do WhatsApp.
    - Se houve erro, a mensagem é marcada como "falha" com o motivo, e o usuário é notificado.
+
+   > **Onde ver falhas de envio:** Menu **Envios pendentes** (sob o menu **WhatsApp** no Discuss).
 
 7. **A mensagem também é copiada para o chatter do registro de negócio**
    Assim como no recebimento, a mensagem enviada é espelhada automaticamente no chatter do lead, pedido de venda ou outro registro vinculado. Os demais usuários acompanhando aquele registro recebem uma notificação em tempo real sobre a nova mensagem.
@@ -96,13 +104,13 @@ WhatsApp (Meta)                  Odoo                              Registro de N
 
 ## 4. O que acontece quando o contato NÃO é identificado?
 
-| Situação | O que o Odoo faz |
-|----------|-------------------|
-| Número não encontrado em nenhum contato do sistema | Cria um "visitante anônimo" (guest) com o nome do perfil do WhatsApp |
-| A mensagem fica apenas no chat do gateway | Não aparece no chatter de nenhum registro de negócio |
-| Nenhum vendedor está acompanhando o chat | O sistema envia um aviso para os gerentes de vendas/SDRs |
-| Alguém clica no chat e vincula manualmente | A partir daí, novas mensagens são espelhadas no chatter do registro vinculado |
-| Mensagens antigas do canal | Quando o vínculo é criado, todas as mensagens anteriores são reproduzidas no chatter do registro |
+| Situação | O que o Odoo faz | Onde ver |
+|----------|-------------------|----------|
+| Número não encontrado em nenhum contato do sistema | Cria um "visitante anônimo" (guest) com o nome do perfil do WhatsApp | Menu **Conversas** (WhatsApp no Discuss) — a mensagem aparece no chat como "Nome do WhatsApp" sem vínculo |
+| A mensagem fica apenas no chat do gateway | Não aparece no chatter de nenhum registro de negócio | Apenas no chat do gateway |
+| Nenhum vendedor está acompanhando o chat | O sistema envia um aviso para os gerentes de vendas/SDRs | Menu **Não Atribuídas** (WhatsApp no Discuss) |
+| Alguém clica no chat e vincula manualmente | A partir daí, novas mensagens são espelhadas no chatter do registro vinculado | Menu **Conversas** → chat vinculado |
+| Mensagens antigas do canal | Quando o vínculo é criado, todas as mensagens anteriores são reproduzidas no chatter do registro | Chatter do registro de negócio |
 
 ---
 
@@ -114,3 +122,25 @@ WhatsApp (Meta)                  Odoo                              Registro de N
 - **Notificações em tempo real**: Todos os usuários que acompanham o registro ou o canal recebem atualizações instantâneas quando uma nova mensagem é enviada ou recebida.
 
 ---
+
+## 6. Mapa de menus
+
+| Menu | Localização | O que tem |
+|------|-------------|-----------|
+| **WhatsApp** | Menu **Discuss** → item lateral | Menu raiz do WhatsApp no Odoo |
+| **Conversas** | WhatsApp → Conversas (seq 5) | Lista de todos os chats de WhatsApp ativos |
+| **Não Atribuídas** | WhatsApp → Não Atribuídas (seq 6) | Chats de WhatsApp sem nenhum vendedor acompanhando |
+| **Envios pendentes** | WhatsApp → Envios pendentes (seq 10) | Templates WhatsApp que falharam ou estão aguardando resposta do contato (24h) |
+| **Transferências Pendentes** | WhatsApp → Transferências Pendentes (seq 98) | Canais de gateway que aguardam transferência para outro vendedor |
+| **Gateway** | Menu **Email** → Gateway (seq 16) | Configuração dos gateways de envio (canais, credenciais, tokens) |
+| **Gateway Partner Channels** | Menu **Email** → Gateway Partner Channels (seq 16) | Mapeamento de parceiros/contactos aos gateways e tokens telefônicos |
+| **Chatter (Feed)** | Qualquer registro de negócio (lead, venda, etc.) | Feed de atividades do registro — mensagens WhatsApp (recebidas e enviadas) aparecem aqui automaticamente |
+
+---
+
+**Fluxo rápido de navegação:**
+1. Recebeu mensagem? → Vá em **Discuss → WhatsApp → Conversas**
+2. Precisa assumir uma conversa? → **Discuss → WhatsApp → Não Atribuídas**
+3. Quer saber se enviou corretamente? → **Discuss → WhatsApp → Envios pendentes**
+4. Quer ver o histórico de uma conversa num lead/venda? → Abra o **lead/venda** e olhe o **chatter** na parte inferior da tela
+5. Precisa configurar o gateway? → **Email → Gateway**

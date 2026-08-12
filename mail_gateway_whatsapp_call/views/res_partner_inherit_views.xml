@@ -1,0 +1,12 @@
+<odoo>
+    <record id="view_partner_form_inherit_wa_call_replace_button" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.wa.call.replace.button</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="odoo_whatsapp_calling.view_partner_form_inherit_wa_call"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='initiate_call_on_whatsapp']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
