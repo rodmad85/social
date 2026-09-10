@@ -19,18 +19,11 @@ class MailThread(models.AbstractModel):
             return partners
         wpp_partners = partners.filtered("whatsapp_phone_ids")
         for partner in wpp_partners:
-            existing_tokens = set(
-                gc.gateway_token for gc in partner.gateway_channel_ids
-            )
             for wp in partner.whatsapp_phone_ids:
                 sanitized = "".join(c for c in wp.phone if c.isdigit())
-                if sanitized in existing_tokens:
-                    continue
-                self.env["res.partner.gateway.channel"].sudo().create({
-                    "partner_id": partner.id,
-                    "gateway_id": gateway.id,
-                    "gateway_token": sanitized,
-                })
-                existing_tokens.add(sanitized)
+                if sanitized:
+                    self.env["res.partner.gateway.channel"].sudo()._get_or_create_for_gateway(
+                        partner, gateway, sanitized
+                    )
             partner.invalidate_recordset(["gateway_channel_ids"])
         return partners

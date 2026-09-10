@@ -114,17 +114,9 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     if partner:
                         break
             if partner:
-                if not self.env["res.partner.gateway.channel"].search_count([
-                    ("partner_id", "=", partner.id),
-                    ("gateway_id", "=", gateway.id),
-                ]):
-                    self.env["res.partner.gateway.channel"].create(
-                        {
-                            "partner_id": partner.id,
-                            "gateway_id": gateway.id,
-                            "gateway_token": str(author_id),
-                        }
-                    )
+                self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
+                    partner, gateway, str(author_id)
+                )
                 return partner
             guest = self.env["mail.guest"].search(
                 [

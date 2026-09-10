@@ -31,15 +31,9 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 ], limit=1)
                 if wp:
                     partner = wp.partner_id
-                    if not self.env["res.partner.gateway.channel"].search_count([
-                        ("partner_id", "=", partner.id),
-                        ("gateway_id", "=", gateway.id),
-                    ]):
-                        self.env["res.partner.gateway.channel"].create({
-                            "partner_id": partner.id,
-                            "gateway_id": gateway.id,
-                            "gateway_token": str(author_id),
-                        })
+                    self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
+                        partner, gateway, str(author_id)
+                    )
                     return partner
         return author
 
@@ -66,8 +60,9 @@ class MailGatewayWhatsappService(models.AbstractModel):
             if not channel:
                 continue
             if author and author._name == "res.partner":
-                suffix = self._get_phone_description(phone)
-                channel.name = f"{author.display_name} ({suffix})" if suffix else author.display_name
+                if not channel.name:
+                    suffix = self._get_phone_description(phone)
+                    channel.name = f"{author.display_name} ({suffix})" if suffix else author.display_name
             else:
                 self._assign_team_lead(channel)
 

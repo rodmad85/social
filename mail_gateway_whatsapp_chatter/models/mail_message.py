@@ -151,21 +151,9 @@ class MailThread(models.AbstractModel):
             raise UserError(self.env._("Phone cannot be sanitized"))
         sanitized_number = sanitized_number.replace("+", "")
         partner = self._whatsapp_get_partner()
-        existing = self.env["res.partner.gateway.channel"].search(
-            [
-                ("partner_id", "=", partner.id),
-                ("gateway_id", "=", gateway.id),
-                ("gateway_token", "=", sanitized_number),
-            ],
-            limit=1,
-        )
-        if not existing:
-            self.env["res.partner.gateway.channel"].create(
-                {
-                    "partner_id": partner.id,
-                    "gateway_id": gateway.id,
-                    "gateway_token": sanitized_number,
-                }
+        if partner:
+            self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
+                partner, gateway, sanitized_number
             )
         return self._whatsapp_get_or_create_channel(
             gateway, sanitized_number, partner
@@ -228,28 +216,9 @@ class MailThread(models.AbstractModel):
                     if phone:
                         sanitized_phone = self._phone_format(number=phone)
                         sanitized = sanitized_phone.replace("+", "") if sanitized_phone else "".join(c for c in phone if c.isdigit())
-                        existing = (
-                            self.env["res.partner.gateway.channel"]
-                            .sudo()
-                            .search(
-                                [
-                                    ("partner_id", "=", partner.id),
-                                    ("gateway_id", "=", gateway.id),
-                                    ("gateway_token", "=", sanitized),
-                                ],
-                                limit=1,
-                            )
+                        self.env["res.partner.gateway.channel"].sudo()._get_or_create_for_gateway(
+                            partner, gateway, sanitized
                         )
-                        if not existing:
-                            self.env[
-                                "res.partner.gateway.channel"
-                            ].sudo().create(
-                                {
-                                    "partner_id": partner.id,
-                                    "gateway_id": gateway.id,
-                                    "gateway_token": sanitized,
-                                }
-                            )
                 partner = self.env["res.partner"].browse(partner.id)
                 gateway_channels = partner.gateway_channel_ids
                 store.add(
@@ -298,6 +267,27 @@ class ResPartner(models.Model):
 
 class ResPartnerGatewayChannel(models.Model):
     _inherit = "res.partner.gateway.channel"
+
+    def _get_or_create_for_gateway(self, partner, gateway, gateway_token):
+        gateway_channel_model = self.browse([])
+        gateway_channel = gateway_channel_model.search(
+            [
+                ("partner_id", "=", partner.id),
+                ("gateway_id", "=", gateway.id),
+            ],
+            limit=1,
+        )
+        if gateway_channel:
+            if gateway_channel.gateway_token != gateway_token:
+                gateway_channel.gateway_token = gateway_token
+            return gateway_channel
+        return gateway_channel_model.create(
+            {
+                "partner_id": partner.id,
+                "gateway_id": gateway.id,
+                "gateway_token": gateway_token,
+            }
+        )
 
     def _mail_format(self):
         res = super()._mail_format()
@@ -399,17 +389,9 @@ class WhatsappComposer(models.TransientModel):
             sanitized_number = (wp.phone_sanitized or wp.phone).replace("+", "")
             partner = record._whatsapp_get_partner()
             gateway = self.gateway_id
-            if not self.env["res.partner.gateway.channel"].search([
-                ("partner_id", "=", partner.id),
-                ("gateway_id", "=", gateway.id),
-                ("gateway_token", "=", sanitized_number),
-            ]):
-                self.env["res.partner.gateway.channel"].create({
-                    "name": gateway.name,
-                    "partner_id": partner.id,
-                    "gateway_id": gateway.id,
-                    "gateway_token": sanitized_number,
-                })
+            self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
+                partner, gateway, sanitized_number
+            )
             channel = self.env["mail.gateway.whatsapp"]._get_channel(
                 gateway, sanitized_number, {
                     "contacts": [{"wa_id": sanitized_number, "profile": {"name": partner.display_name}}],

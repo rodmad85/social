@@ -31,15 +31,9 @@ class WhatsappAssignContactWizard(models.TransientModel):
                     "phone": token,
                 })
 
-        if not self.env["res.partner.gateway.channel"].search_count([
-            ("partner_id", "=", partner.id),
-            ("gateway_id", "=", gateway.id),
-        ]):
-            self.env["res.partner.gateway.channel"].create({
-                "partner_id": partner.id,
-                "gateway_id": gateway.id,
-                "gateway_token": token,
-            })
+        self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
+            partner, gateway, token
+        )
 
         channel_name = partner.display_name
         self.channel_id.name = channel_name

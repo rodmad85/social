@@ -19,10 +19,22 @@ export class SendWhatsappCallButton extends Component {
         this.state.working = true;
         try {
             await this.props.record.save();
+            const partnerId = await this.orm.call(
+                "res.partner",
+                "resolve_whatsapp_call_partner_id",
+                [this.props.record.resModel, this.props.record.resId]
+            );
+            if (!partnerId) {
+                this.notification.add(
+                    _t("Nenhum parceiro relacionado encontrado para este registro."),
+                    {type: "warning", sticky: true}
+                );
+                return;
+            }
             const action = await this.orm.call(
                 "res.partner",
                 "initiate_call_on_whatsapp",
-                [this.props.record.resId]
+                [partnerId]
             );
             if (action && action.type === "ir.actions.act_window") {
                 this.action.doAction(action);
