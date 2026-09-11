@@ -308,8 +308,10 @@ class ResPartnerGatewayChannel(models.Model):
                 for wp in partner.whatsapp_phone_ids:
                     wp_digits = "".join(c for c in (wp.phone or "") if c.isdigit())
                     if token and token == wp_digits:
-                        label = wp.description or "WhatsApp"
-                        res["name"] = "%s: %s" % (label, wp.phone)
+                        if wp.description:
+                            res["name"] = "%s (%s)" % (wp.phone, wp.description)
+                        else:
+                            res["name"] = wp.phone
                         break
             if not is_mobile and token:
                 res["name"] = token
@@ -349,7 +351,7 @@ class WhatsappComposer(models.TransientModel):
         if partner.phone:
             options.append(("phone", "Phone: %s" % partner.phone))
         for wp in partner.whatsapp_phone_ids:
-            label = "%s: %s" % (wp.description or "WhatsApp", wp.phone)
+            label = "%s (%s)" % (wp.phone, wp.description) if wp.description else wp.phone
             options.append(("whatsapp_%d" % wp.id, label))
         return options or [("mobile", "Mobile"), ("phone", "Phone")]
 
