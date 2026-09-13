@@ -1,39 +1,66 @@
 # Copyright 2026 Madooit
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-import logging
-
 from odoo import models
-
-_logger = logging.getLogger(__name__)
 
 
 class MailGatewayWhatsappService(models.AbstractModel):
     _inherit = "mail.gateway.whatsapp"
 
-    def _get_channel(self, gateway, token, update, force_create=False):
-        """Route incoming WhatsApp messages to livechat channels when the
-        gateway is linked to an ``im_livechat.channel``.
+    def _process_update(self, chat, message, value):
+        """Mirror inbound gateway messages into the linked livechat channel.
 
-        When the gateway has a ``livechat_channel_id``, this method searches
-        for an existing livechat channel by ``gateway_channel_token`` and
-        creates one if needed, delegating operator selection to the livechat
-        channel's ``_get_operator`` method.
+        The base implementation posts the webhook message on the gateway (bot)
+        channel. When the gateway is linked to an ``im_livechat.channel``, the
+        message is mirrored into the livechat conversation channel where the
+        operator answers, reusing the existing conversation by
+        ``gateway_channel_token``.
         """
-        if not gateway.livechat_channel_id:
-            return super()._get_channel(
-                gateway, token, update, force_create=force_create
-            )
-        chat_id = gateway._get_channel_id(token)
-        if chat_id:
-            return self.env["discuss.channel"].browse(chat_id)
-        if not force_create and gateway.has_new_channel_security:
-            return False
-        vals = self.env["discuss.channel"]._get_livechat_whatsapp_channel_vals(
-            gateway, token, update
+        super()._process_update(chat, message, value)
+        livechat_channel = self.env["im_livechat.channel"].search(
+            [("whatsapp_gateway_id", "=", chat.gateway_id.id)], limit=1
         )
-        if not vals:
-            return False
-        channel = self.env["discuss.channel"].create(vals)
-        channel._broadcast(channel.channel_member_ids.mapped("partner_id").ids)
-        return channel
+        if not livechat_channel:
+            return
+        posted = self.env["mail.message"].search(
+            [
+                ("model", "=", "discuss.channel"),
+                ("res_id", "=", chat.id),
+                ("message_type", "=", "comment"),
+            ],
+            order="id desc",
+            limit=1,
+        )
+        if not posted:
+            return
+        conversation = self.env["discuss.channel"].search(
+            [
+                ("channel_type", "=", "livechat"),
+                ("livechat_channel_id", "=", livechat_channel.id),
+                ("gateway_channel_token", "=", chat.gateway_channel_token),
+            ],
+            limit=1,
+        )
+        if not conversation:
+            vals = self.env["discuss.channel"]._get_livechat_whatsapp_channel_vals(
+                chat.gateway_id, chat.gateway_channel_token, value
+            )
+            if not vals:
+                return
+            conversation = self.env["discuss.channel"].create(vals)
+            conversation._broadcast(
+                conversation.channel_member_ids.mapped("partner_id").ids
+            )
+        author = self._get_author(chat.gateway_id, value)
+        if author and author._name == "mail.guest":
+            conversation = conversation.with_user(
+                self.env.ref("base.public_user").id
+            ).with_context(guest=author)
+        conversation.sudo().with_context(no_gateway_notification=True).message_post(
+            body=posted.body,
+            author_id=author and author._name == "res.partner" and author.id,
+            date=posted.date,
+            subtype_xmlid="mail.mt_comment",
+            message_type="comment",
+            attachment_ids=posted.attachment_ids.ids,
+        )
