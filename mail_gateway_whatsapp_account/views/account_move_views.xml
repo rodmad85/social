@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Madooit
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_account_move_form_whatsapp_send" model="ir.ui.view">
+        <field name="name">account.move.form.whatsapp.send</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_invoice_sent'][2]"
+                position="after"
+            >
+                <button
+                    name="action_send_whatsapp"
+                    string="Send by WhatsApp"
+                    type="object"
+                    invisible="state != 'posted' or move_type not in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
