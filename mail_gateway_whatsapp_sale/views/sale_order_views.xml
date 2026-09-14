@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Madooit
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_sale_order_form_whatsapp_send" model="ir.ui.view">
+        <field name="name">sale.order.form.whatsapp.send</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <button name="action_quotation_send" id="send_by_email" position="after">
+                <button
+                    name="action_send_whatsapp"
+                    string="Send by WhatsApp"
+                    type="object"
+                    invisible="state not in ('draft', 'sent', 'sale')"
+                />
+            </button>
+        </field>
+    </record>
+</odoo>
