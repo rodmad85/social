@@ -3,7 +3,6 @@
 
 
 from odoo import api, fields, models
-from odoo.tests import RecordCapturer
 
 from odoo.addons.mail.tools.discuss import Store
 
@@ -114,6 +113,8 @@ class MailMessage(models.Model):
         return result
 
     def _send_to_gateway_thread(self, gateway_channel_id):
+        from odoo.tests import RecordCapturer
+
         chat_id = gateway_channel_id.gateway_id._get_channel_id(
             gateway_channel_id.gateway_token
         )

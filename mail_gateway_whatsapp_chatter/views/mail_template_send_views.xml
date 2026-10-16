@@ -75,12 +75,4 @@
         </field>
     </record>
 
-    <menuitem
-        id="menu_mail_whatsapp_template_send"
-        name="Envios pendentes"
-        parent="mail_gateway_whatsapp_messages.menu_mail_whatsapp_messages_root"
-        action="action_mail_whatsapp_template_send"
-        sequence="10"
-        groups="mail_gateway.gateway_user"
-    />
-</odoo>
+    </odoo>

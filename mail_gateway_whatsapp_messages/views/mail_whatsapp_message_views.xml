@@ -284,7 +284,7 @@
         name="WhatsApp"
         parent="mail.menu_root_discuss"
         sequence="50"
-        groups="sales_team.group_sale_manager,crm_commissions.group_crm_commission_sdr,mail_gateway.gateway_user"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
     />
     <menuitem
         id="menu_mail_whatsapp_conversations"
@@ -292,7 +292,7 @@
         parent="menu_mail_whatsapp_messages_root"
         action="action_mail_whatsapp_conversation"
         sequence="5"
-        groups="sales_team.group_sale_manager,crm_commissions.group_crm_commission_sdr,mail_gateway.gateway_user"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
     />
     <menuitem
         id="menu_mail_whatsapp_conversations_unassigned"
@@ -300,6 +300,14 @@
         parent="menu_mail_whatsapp_messages_root"
         action="action_mail_whatsapp_conversation_unassigned"
         sequence="6"
-        groups="sales_team.group_sale_manager,crm_commissions.group_crm_commission_sdr,mail_gateway.gateway_user"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
+    />
+    <menuitem
+        id="menu_mail_whatsapp_template_send"
+        name="Envios pendentes"
+        parent="menu_mail_whatsapp_messages_root"
+        action="mail_gateway_whatsapp_chatter.action_mail_whatsapp_template_send"
+        sequence="10"
+        groups="mail_gateway.gateway_user"
     />
 </odoo>
