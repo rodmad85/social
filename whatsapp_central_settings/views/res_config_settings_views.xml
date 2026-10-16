@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record
+        id="res_config_settings_view_form_whatsapp_central"
+        model="ir.ui.view"
+    >
+        <field name="name">res.config.settings.view.form.inherit.whatsapp_central</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    data-string="WhatsApp Central"
+                    string="WhatsApp Central"
+                    name="whatsapp_central_settings"
+                    groups="base.group_system"
+                >
+                    <block title="Configurações do WhatsApp">
+                        <div class="row mt16 o_settings_container">
+                            <!-- 1. Recebimento de ligações — quem deverá receber -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_call_receive_user_ids"
+                                        string="Recebimento de ligações — quem deverá receber"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="wa_call_receive_user_ids"
+                                        widget="many2many_tags"
+                                    />
+                                </div>
+                            </div>
+                            <!-- 2. Efetuar ligações — quem pode efetuar -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_call_make_user_ids"
+                                        string="Efetuar ligações — quem pode efetuar"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="wa_call_make_user_ids"
+                                        widget="many2many_tags"
+                                    />
+                                </div>
+                            </div>
+                            <!-- 3. Editar templates de mensagem — quem pode editar -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_template_edit_user_ids"
+                                        string="Editar templates de mensagem — quem pode editar"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="wa_template_edit_user_ids"
+                                        widget="many2many_tags"
+                                    />
+                                </div>
+                            </div>
+                            <!-- 4. Mensagens não atribuídas -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_unassigned_action"
+                                        string="Mensagens não atribuídas"
+                                        class="o_light_label"
+                                    />
+                                    <field name="wa_unassigned_action" class="oe_inline"/>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_unassigned_user_id"
+                                        string="Usuário padrão para atribuição"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="wa_unassigned_user_id"
+                                        class="oe_inline"
+                                    />
+                                </div>
+                            </div>
+                            <!-- 5. Quem pode ver o menu WhatsApp - Conversas -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="wa_conversation_menu_group_ids"
+                                        string="Quem pode ver o menu WhatsApp - Conversas"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="wa_conversation_menu_group_ids"
+                                        widget="many2many_tags"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>
