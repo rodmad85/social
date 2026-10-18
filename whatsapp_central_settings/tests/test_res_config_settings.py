@@ -31,3 +31,22 @@ class TestWhatsAppCentralSettings(TransactionCase):
         """O valor padrão de mensagens não atribuídas deve ser 'list'."""
         settings = self.settings.create({})
         self.assertEqual(settings.wa_unassigned_action, "list")
+
+    def test_03_onchange_with_saved_many2many(self):
+        """Carregar as configurações com many2many já salvos não deve falhar.
+
+        Regressão: get_values() retornava uma lista simples de ids para os
+        campos many2many e o onchange quebrava com
+        "TypeError: 'int' object is not subscriptable".
+        """
+        self.env["ir.config_parameter"].sudo().set_param(
+            "whatsapp_central_settings.wa_call_make_user_ids",
+            str(self.env.user.id),
+        )
+        fields_spec = {
+            "wa_call_make_user_ids": {"fields": {"display_name": {}}},
+            "wa_unassigned_action": {},
+        }
+        result = self.settings.onchange({}, [], fields_spec)
+        self.assertIn("value", result)
+        self.assertIn("wa_call_make_user_ids", result["value"])

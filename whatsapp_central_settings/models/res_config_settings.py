@@ -3,7 +3,7 @@
 
 import logging
 
-from odoo import api, fields, models, _
+from odoo import Command, api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 
@@ -23,6 +23,9 @@ class ResConfigSettings(models.TransientModel):
     # chamada estiver instalado.
     wa_call_receive_user_ids = fields.Many2many(
         "res.users",
+        relation="res_config_settings_wa_call_receive_user_rel",
+        column1="config_id",
+        column2="user_id",
         string="Recebimento de ligações — quem deverá receber",
         help="Usuários responsáveis por receber ligações do WhatsApp. "
         "Sincronizado com provider.wa_call_responsible_user_ids quando o módulo "
@@ -32,6 +35,9 @@ class ResConfigSettings(models.TransientModel):
     # 2. Efetuar ligações — quem pode efetuar.
     wa_call_make_user_ids = fields.Many2many(
         "res.users",
+        relation="res_config_settings_wa_call_make_user_rel",
+        column1="config_id",
+        column2="user_id",
         string="Efetuar ligações — quem pode efetuar",
         help="Usuários autorizados a efetuar ligações via WhatsApp.",
     )
@@ -39,6 +45,9 @@ class ResConfigSettings(models.TransientModel):
     # 3. Editar configurações de mensagens template — quem pode editar.
     wa_template_edit_user_ids = fields.Many2many(
         "res.users",
+        relation="res_config_settings_wa_template_edit_user_rel",
+        column1="config_id",
+        column2="user_id",
         string="Editar templates de mensagem — quem pode editar",
         help="Usuários autorizados a criar/editar mensagens template do WhatsApp.",
     )
@@ -80,8 +89,14 @@ class ResConfigSettings(models.TransientModel):
         ICPSudo = self.env["ir.config_parameter"].sudo()
 
         def _ids(param_name):
+            # x2many fields must be returned as a list of commands (not as a
+            # plain list of ids). ``res.config.settings.default_get`` feeds
+            # these values into the ``onchange`` machinery, which serializes
+            # x2many values as commands; returning bare ints raises
+            # "TypeError: 'int' object is not subscriptable".
             raw = ICPSudo.get_param(PARAM_PREFIX + param_name) or ""
-            return [int(x) for x in raw.split(",") if x.strip()]
+            ids = [int(x) for x in raw.split(",") if x.strip()]
+            return [Command.set(ids)] if ids else False
 
         res.update(
             wa_call_receive_user_ids=_ids("wa_call_receive_user_ids"),
@@ -150,7 +165,7 @@ class ResConfigSettings(models.TransientModel):
         menu = self.env.ref(MENU_CALLING_CONVERSATIONS, raise_if_not_found=False)
         if menu and self.wa_conversation_menu_group_ids:
             menu.sudo().write(
-                {"groups": [(6, 0, self.wa_conversation_menu_group_ids.ids)]}
+                {"groups_id": [(6, 0, self.wa_conversation_menu_group_ids.ids)]}
             )
 
     def _module_installed(self, module_name):
