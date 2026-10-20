@@ -16,6 +16,8 @@ class TestWhatsAppCentralSettings(TransactionCase):
             "wa_call_receive_user_ids",
             "wa_call_make_user_ids",
             "wa_template_edit_user_ids",
+            "wa_call_provider_user_ids",
+            "wa_call_default_provider_user_ids",
             "wa_unassigned_action",
             "wa_unassigned_user_id",
             "wa_conversation_menu_group_ids",
@@ -50,3 +52,40 @@ class TestWhatsAppCentralSettings(TransactionCase):
         result = self.settings.onchange({}, [], fields_spec)
         self.assertIn("value", result)
         self.assertIn("wa_call_make_user_ids", result["value"])
+
+    def test_04_provider_fields_saved_as_params(self):
+        """Allowed/Default Provider devem ser persistidos em parâmetros."""
+        ICPSudo = self.env["ir.config_parameter"].sudo()
+        settings = self.settings.create(
+            {
+                "wa_call_provider_user_ids": [(6, 0, [self.env.user.id])],
+                "wa_call_default_provider_user_ids": [(6, 0, [self.env.user.id])],
+            }
+        )
+        settings.set_values()
+        self.assertEqual(
+            ICPSudo.get_param("whatsapp_central_settings.wa_call_provider_user_ids"),
+            str(self.env.user.id),
+        )
+        self.assertEqual(
+            ICPSudo.get_param(
+                "whatsapp_central_settings.wa_call_default_provider_user_ids"
+            ),
+            str(self.env.user.id),
+        )
+
+    def test_05_sync_provider_fields_without_calling_module(self):
+        """Sem o módulo de chamada, o sync não deve levantar exceção."""
+        settings = self.settings.create(
+            {
+                "wa_call_provider_user_ids": [(6, 0, [self.env.user.id])],
+                "wa_call_default_provider_user_ids": [(6, 0, [self.env.user.id])],
+            }
+        )
+        has_provider_fields = (
+            "provider_id" in self.env["res.users"]._fields
+            and "provider_ids" in self.env["res.users"]._fields
+        )
+        settings._sync_call_provider_fields()
+        if not has_provider_fields:
+            self.assertFalse(self.env.user.provider_id)
