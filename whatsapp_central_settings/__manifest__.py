@@ -25,9 +25,16 @@ e permanecem acessíveis mesmo quando os módulos de chamada do WhatsApp
     "maintainers": ["rodmad85"],
     "website": "https://github.com/OCA/social",
     "category": "Messaging",
-    "depends": ["base", "mail_gateway", "mail_gateway_whatsapp", "mail_gateway_whatsapp_messages"],
+    "depends": [
+        "base",
+        "mail_gateway",
+        "mail_gateway_whatsapp",
+        "mail_gateway_whatsapp_messages",
+        "odoo_whatsapp_calling",
+    ],
     "data": [
         "views/res_config_settings_views.xml",
+        "views/res_partner_inherit_views.xml",
     ],
     "installable": True,
     "application": False,
