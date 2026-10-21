@@ -22,8 +22,8 @@ class MailThread(models.AbstractModel):
             for wp in partner.whatsapp_phone_ids:
                 sanitized = "".join(c for c in wp.phone if c.isdigit())
                 if sanitized:
-                    self.env["res.partner.gateway.channel"].sudo()._get_or_create_for_gateway(
-                        partner, gateway, sanitized
-                    )
+                    self.env[
+                        "res.partner.gateway.channel"
+                    ].sudo()._get_or_create_for_gateway(partner, gateway, sanitized)
             partner.invalidate_recordset(["gateway_channel_ids"])
         return partners

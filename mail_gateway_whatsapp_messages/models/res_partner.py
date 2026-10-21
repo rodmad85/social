@@ -9,7 +9,9 @@ class ResPartnerWhatsappPhone(models.Model):
         "res.partner", string="Contact", required=True, ondelete="cascade"
     )
     phone = fields.Char(string="Phone", required=True)
-    phone_sanitized = fields.Char(string="Phone Sanitized", compute="_compute_phone_sanitized", store=True)
+    phone_sanitized = fields.Char(
+        string="Phone Sanitized", compute="_compute_phone_sanitized", store=True
+    )
     description = fields.Char(string="Description", help="e.g. Office, Spare phone")
 
     _sql_constraints = [

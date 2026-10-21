@@ -6,10 +6,9 @@ class MailGatewayAbstract(models.AbstractModel):
 
     def _get_channel_vals(self, gateway, token, update):
         author = self._get_author(gateway, update)
-        members = [
-            Command.create({"partner_id": p.id, "unpin_dt": False})
-            for p in gateway.member_ids.partner_id
-        ]
+        # Conversa criada apenas com o contato externo; usuários internos são
+        # adicionados quando iniciam a conversa ou quando são atribuídos.
+        members = []
         if author:
             members.append(
                 Command.create(

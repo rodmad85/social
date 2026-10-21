@@ -21,6 +21,13 @@
                     class="btn-primary"
                 />
                 <button
+                    name="action_claim"
+                    type="object"
+                    string="Assumir Conversa"
+                    class="btn-secondary"
+                    invisible="not is_unassigned"
+                />
+                <button
                     name="action_auto_assign_by_phone"
                     type="object"
                     string="Buscar Contato"

@@ -26,9 +26,7 @@ class MailMessage(models.Model):
         current_partner = self.env.user.partner_id
         for msg in self:
             if msg.gateway_type == "whatsapp":
-                if msg.author_id and msg.author_id != current_partner:
-                    msg.is_whatsapp_incoming = True
-                elif msg.author_guest_id and not msg.author_id:
+                if msg.author_id and msg.author_id != current_partner or msg.author_guest_id and not msg.author_id:
                     msg.is_whatsapp_incoming = True
                 else:
                     msg.is_whatsapp_incoming = False
