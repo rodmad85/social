@@ -43,6 +43,11 @@ patch(Chatter.prototype, {
                     }
                 });
             }
+        }).catch(function (error) {
+            self.env.services.notification.add(
+                error.data?.message || error.message || _("Erro ao iniciar a chamada do WhatsApp."),
+                { type: "danger", sticky: true }
+            );
         });
     },
 });
