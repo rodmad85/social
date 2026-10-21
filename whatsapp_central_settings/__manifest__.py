@@ -32,11 +32,18 @@ e permanecem acessíveis mesmo quando os módulos de chamada do WhatsApp
         "mail_gateway_whatsapp_messages",
         "odoo_whatsapp_calling",
         "tus_meta_whatsapp_base",
+        "tus_meta_wa_discuss",
     ],
     "data": [
         "views/res_config_settings_views.xml",
         "views/res_partner_inherit_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "whatsapp_central_settings/static/src/core/web/chatter.xml",
+            "whatsapp_central_settings/static/src/core/common/composer.js",
+        ],
+    },
     "installable": True,
     "application": False,
 }

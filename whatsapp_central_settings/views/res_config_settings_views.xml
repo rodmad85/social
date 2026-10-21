@@ -125,6 +125,21 @@
                                     />
                                 </div>
                             </div>
+                            <!-- 6. Botão de chamada no chatter — modelos onde não mostrar -->
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_right_pane">
+                                    <label
+                                        for="not_wa_call_btn_in_chatter"
+                                        string="Not Show WhatsApp Call Button in Chatter"
+                                        class="o_light_label"
+                                    />
+                                    <field
+                                        name="not_wa_call_btn_in_chatter"
+                                        class="oe_inline"
+                                        widget="many2many_tags"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </block>
                 </app>

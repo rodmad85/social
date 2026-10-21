@@ -108,6 +108,13 @@ class ResConfigSettings(models.TransientModel):
         "no módulo Mensagens (Discuss).",
     )
 
+    # 6. Botão de chamada no chatter — modelos onde não mostrar.
+    not_wa_call_btn_in_chatter = fields.Many2many(
+        string="not_wa_call_btn_in_chatter",
+        related="company_id.not_wa_call_btn_in_chatter",
+        readonly=False
+    )
+
     # -------------------------------------------------------------------------
     # get_values / set_values
     # -------------------------------------------------------------------------
@@ -259,3 +266,11 @@ class ResConfigSettings(models.TransientModel):
         """Retorna os provedores compatíveis com as empresas do usuário."""
         companies = user.company_ids or self.env.company
         return all_providers.filtered(lambda p: p.company_id in companies)
+
+
+class ResCompany(models.Model):
+    _inherit = "res.company"
+
+    not_wa_call_btn_in_chatter = fields.Many2many(
+        "ir.model", "send_wa_call_model_rel", "model_id", "send_wa_call_id"
+    )

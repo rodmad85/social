@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o-mail-Chatter-sendMessage')]" position="attributes">
+             <attribute name="t-if">state.thread.DisableSendMessageBtn</attribute>
+        </xpath>
+         <xpath expr="//button[hasclass('o-mail-Chatter-sendMessage')]" position="after">
+             <button t-if="state.thread.DisableWpSendMessageBtn" class="o-mail-Chatter-sendwaMessage btn text-nowrap me-1" t-att-class="{
+                    'btn-primary': state.composerType !== 'note',
+                    'btn-secondary': state.composerType === 'note',
+                    'active': state.composerType === 'WaMessage',
+                    'my-2': !props.compactHeight
+                }" t-att-disabled="!state.thread.hasWriteAccess and !(state.thread.hasReadAccess and state.thread.canPostOnReadonly) and props.threadId" data-hotkey="m" t-on-click="OpenWhatsappComposer">
+                    Send WhatsApp Message
+             </button>
+             <button t-if="state.thread.DisableWpCallBtn" class="o-mail-Chatter-sendwaCall btn text-nowrap me-1" t-att-class="{
+                    'btn-primary': state.composerType !== 'note',
+                    'btn-secondary': state.composerType === 'note',
+                    'my-2': !props.compactHeight
+                }" t-att-disabled="!state.thread.hasWriteAccess and !(state.thread.hasReadAccess and state.thread.canPostOnReadonly) and props.threadId" t-on-click="OpenWhatsappCall" title="Call on WhatsApp" aria-label="Call on WhatsApp">
+                    <i class="fa fa-fw fa-lg fa-phone"/>
+             </button>
+          </xpath>
+    </t>
+</templates>
