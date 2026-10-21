@@ -5,7 +5,7 @@
         <field name="inherit_id" ref="odoo_whatsapp_calling.view_partner_form_inherit_wa_call"/>
         <field name="arch" type="xml">
             <xpath expr="//button[@name='initiate_call_on_whatsapp']" position="attributes">
-                <attribute name="invisible">1</attribute>
+                <attribute name="invisible">mobile == False or not user_can_make_whatsapp_call</attribute>
             </xpath>
         </field>
     </record>

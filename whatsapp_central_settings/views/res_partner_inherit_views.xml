@@ -3,11 +3,22 @@
     <record id="view_partner_form_inherit_wa_call_central_settings" model="ir.ui.view">
         <field name="name">res.partner.form.inherit.wa.call.central.settings</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="odoo_whatsapp_calling.view_partner_form_inherit_wa_call"/>
+        <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="priority">999</field>
         <field name="arch" type="xml">
-            <xpath expr="//button[@name='initiate_call_on_whatsapp']" position="attributes">
-                <attribute name="invisible">mobile == False or not user_can_make_whatsapp_call</attribute>
+            <xpath expr="//field[@name='mobile']" position="after">
+                <field name="user_can_make_whatsapp_call" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='mobile']" position="after">
+                <button
+                    type="object"
+                    name="initiate_call_on_whatsapp"
+                    class="btn-sm btn-link mb4 fa fa-phone"
+                    aria-label="Call on WhatsApp"
+                    title="Call on WhatsApp"
+                    invisible="mobile == False or not user_can_make_whatsapp_call"
+                    groups="tus_meta_whatsapp_base.whatsapp_group_user"
+                > WhatsApp Call</button>
             </xpath>
         </field>
     </record>

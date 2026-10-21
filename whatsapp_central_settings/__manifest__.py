@@ -31,6 +31,7 @@ e permanecem acessíveis mesmo quando os módulos de chamada do WhatsApp
         "mail_gateway_whatsapp",
         "mail_gateway_whatsapp_messages",
         "odoo_whatsapp_calling",
+        "tus_meta_whatsapp_base",
     ],
     "data": [
         "views/res_config_settings_views.xml",
