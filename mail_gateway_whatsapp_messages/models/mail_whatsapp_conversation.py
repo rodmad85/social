@@ -77,7 +77,7 @@ class MailWhatsappConversation(models.Model):
     def action_auto_assign_by_phone(self):
         self.env.cr.execute("""
             INSERT INTO discuss_channel_member (partner_id, channel_id, new_message_separator)
-            SELECT ru.partner_id, dc.id, 0
+            SELECT DISTINCT ru.partner_id, dc.id, 0
             FROM discuss_channel dc
             JOIN res_partner rp ON (rp.phone_sanitized = '+' || dc.gateway_channel_token OR (rp.phone_sanitized = '+' || left(dc.gateway_channel_token, 4) || '9' || substring(dc.gateway_channel_token, 5) AND dc.gateway_channel_token ~ '^55[0-9]{2}'))
             JOIN res_users ru ON ru.id = rp.user_id AND ru.active = True
@@ -94,6 +94,7 @@ class MailWhatsappConversation(models.Model):
                   FROM discuss_channel_member dcm
                   WHERE dcm.channel_id = dc.id AND dcm.partner_id = ru.partner_id
               )
+            ON CONFLICT DO NOTHING
         """)
         return {"type": "ir.actions.act_window_close"}
 
