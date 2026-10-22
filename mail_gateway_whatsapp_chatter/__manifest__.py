@@ -16,6 +16,7 @@
     "assets": {
         "web.assets_backend": [
             "mail_gateway_whatsapp_chatter/static/src/js/whatsapp_message_patch.esm.js",
+            "mail_gateway_whatsapp_chatter/static/src/js/whatsapp_call_thread_action.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/js/gateway_follower_patch.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/js/composer_gateway_patch.esm.js",
             "mail_gateway_whatsapp_chatter/static/src/js/whatsapp_delivery_patch.esm.js",

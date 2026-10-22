@@ -12,6 +12,12 @@
                     invisible="not has_multiple_phones"
                     options="{'no_create': True, 'no_open': True}"
                 />
+                <button
+                    name="action_initiate_whatsapp_call"
+                    type="object"
+                    class="btn-sm btn-link mb4 fa fa-phone"
+                    string="Iniciar Chamada"
+                />
             </field>
             <field name="template_id" position="attributes">
                 <attribute name="domain">[('gateway_id', '=', gateway_id), ('state', '=', 'approved'), ('is_supported', '=', True), '|', ('model', '=', res_model), ('model', '=', 'res.partner')]</attribute>

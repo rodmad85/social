@@ -2,7 +2,6 @@
 
 import { Chatter } from "@mail/chatter/web_portal/chatter";
 import { Composer } from "@mail/core/common/composer";
-import { _t } from "@web/core/l10n/translation";
 import { patch } from "@web/core/utils/patch";
 import { prettifyMessageContent } from "@mail/utils/common/format";
 
@@ -26,28 +25,5 @@ patch(Chatter.prototype, {
               }
             }
         );
-    },
-    OpenWhatsappCall() {
-        var self = this
-        this.env.services.rpc.call(
-            'res.partner', 'whatsapp_call_from_chatter',
-            [this.props.threadModel, this.props.threadId]
-        ).then(function (result) {
-            if (result && result.type) {
-                self.env.services.action.doAction(result, {
-                    onClose: function () {
-                        self.store.Thread.insert({
-                            model: self.props.threadModel,
-                            id: self.props.threadId,
-                        }).fetchNewMessages()
-                    }
-                });
-            }
-        }).catch(function (error) {
-            self.env.services.notification.add(
-                error.data?.message || error.message || _("Erro ao iniciar a chamada do WhatsApp."),
-                { type: "danger", sticky: true }
-            );
-        });
     },
 });

@@ -453,3 +453,31 @@ class WhatsappComposer(models.TransientModel):
             subtype_xmlid="mail.mt_comment",
             message_type="comment",
         )
+
+    def action_initiate_whatsapp_call(self):
+        self.ensure_one()
+        record = self.env[self.res_model].browse(self.res_id)
+        if not record:
+            return True
+        partner = record if record._name == "res.partner" else record.partner_id
+        if not partner:
+            return True
+        phone = self.phone_number or "mobile"
+        if phone == "mobile":
+            number = partner.mobile
+        elif phone == "phone":
+            number = partner.phone
+        elif phone.startswith("whatsapp_"):
+            wp_id = int(phone.split("_")[1])
+            wp = self.env["res.partner.whatsapp.phone"].browse(wp_id)
+            number = wp.phone_sanitized or wp.phone
+        else:
+            number = partner.mobile
+        if not number:
+            return True
+        original_mobile = partner.mobile
+        partner.sudo().write({"mobile": number})
+        try:
+            return partner.initiate_call_on_whatsapp()
+        finally:
+            partner.sudo().write({"mobile": original_mobile})

@@ -19,7 +19,7 @@ configurações dos módulos de WhatsApp disponíveis nas pastas ``social`` e
 Os valores são armazenados em parâmetros do sistema (``ir.config_parameter``)
 e permanecem acessíveis mesmo quando os módulos de chamada do WhatsApp
 (``odoo_whatsapp_calling``) ainda não estão instalados neste ambiente.""",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "license": "AGPL-3",
     "author": "Madooit,Odoo Community Association (OCA)",
     "maintainers": ["rodmad85"],
@@ -40,7 +40,6 @@ e permanecem acessíveis mesmo quando os módulos de chamada do WhatsApp
     ],
     "assets": {
         "web.assets_backend": [
-            "whatsapp_central_settings/static/src/core/web/chatter.xml",
             "whatsapp_central_settings/static/src/core/common/composer.js",
         ],
     },
