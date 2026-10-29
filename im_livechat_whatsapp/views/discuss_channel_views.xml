@@ -10,7 +10,7 @@
                     <button name="action_ai_whatsapp_takeover" string="Assumir conversa" type="object" class="btn-primary" invisible="channel_type != 'livechat' or not ai_active or ai_handed_off"/>
                 </header>
             </xpath>
-            <xpath expr="//sheet/group" position="inside">
+            <xpath expr="//sheet" position="inside">
                 <group string="IA WhatsApp" invisible="channel_type != 'livechat'">
                     <field name="ai_active" readonly="1"/>
                     <field name="ai_handed_off" readonly="1"/>
