@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ai_tool_whatsapp_clinical_availability" model="ai.tool">
+        <field name="name">clinical_get_availability</field>
+        <field name="description">Consulta horários disponíveis na agenda da clínica (baseado no clinical_management). Retorna apenas slots livres, considerando intervalo de almoço.</field>
+        <field name="model_id" ref="im_livechat_whatsapp.model_discuss_channel"/>
+        <field name="function_name">ai_whatsapp_tool_get_availability</field>
+        <field name="kind">generic</field>
+    </record>
+
+    <record id="ai_tool_whatsapp_product_prices" model="ai.tool">
+        <field name="name">product_get_price_table</field>
+        <field name="description">Consulta tabela de preços padrão (product.pricelist) com base em termo de busca. Retorna apenas preço e descrição do serviço/produto.</field>
+        <field name="model_id" ref="im_livechat_whatsapp.model_discuss_channel"/>
+        <field name="function_name">ai_whatsapp_tool_get_prices</field>
+        <field name="kind">generic</field>
+    </record>
+</odoo>
