@@ -36,7 +36,7 @@ export class SendWhatsappCallButton extends Component {
                 "initiate_call_on_whatsapp",
                 [partnerId]
             );
-            if (action && action.type === "ir.actions.act_window") {
+            if (action) {
                 this.action.doAction(action);
             }
         } catch (err) {

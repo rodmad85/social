@@ -41,7 +41,7 @@ threadActionsRegistry
                 "initiate_call_on_whatsapp",
                 [partnerId]
             );
-            if (action && action.type === "ir.actions.act_window") {
+            if (action) {
                 await component.env.services.action.doAction(action);
             }
         },

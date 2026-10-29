@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_im_livechat_channel_whatsapp_user,im_livechat.channel.whatsapp.user,model_im_livechat_channel,im_livechat.group_user,1,0,0,0
