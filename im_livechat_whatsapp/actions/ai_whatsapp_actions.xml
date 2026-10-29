@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_discuss_channel_ai_whatsapp" model="ir.actions.act_window">
+        <field name="name">Atendimento IA</field>
+        <field name="res_model">discuss.channel</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('channel_type','=','livechat'), ('ai_active','=',True), ('ai_handed_off','=',False), ('livechat_channel_id.whatsapp_gateway_id','!=',False)]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nenhuma conversa em atendimento pela IA no momento
+            </p>
+            <p>
+                Conversas WhatsApp em que a IA está atendendo e ainda não foram assumidas por um atendente aparecerão aqui.
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_discuss_channel_ai_whatsapp"
+        name="Atendimento IA"
+        parent="mail.menu_root_discuss"
+        action="action_discuss_channel_ai_whatsapp"
+        sequence="15"/>
+</odoo>

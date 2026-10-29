@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="im_livechat_channel_view_form_inherit_whatsapp" model="ir.ui.view">
-        <field name="name">im_livechat.channel.form.whatsapp</field>
+    <record id="im_livechat_channel_view_form_inherit_whatsapp_ai" model="ir.ui.view">
+        <field name="name">im_livechat.channel.form.whatsapp.ai</field>
         <field name="model">im_livechat.channel</field>
         <field name="inherit_id" ref="im_livechat.im_livechat_channel_view_form"/>
         <field name="arch" type="xml">
@@ -10,6 +10,7 @@
                     <group>
                         <group string="WhatsApp Integration">
                             <field name="whatsapp_gateway_id"/>
+                            <field name="whatsapp_chatbot_script_id"/>
                         </group>
                     </group>
                     <div class="text-muted mt8" invisible="not whatsapp_gateway_id">
@@ -18,6 +19,39 @@
                         Operators will receive messages in Discuss and can
                         respond directly.
                     </div>
+                    <div class="text-muted mt8" invisible="not whatsapp_chatbot_script_id">
+                        On the first WhatsApp contact the bot sends the
+                        script's welcome steps and its first question, with
+                        the answer options as WhatsApp interactive buttons.
+                        The conversation is mirrored to the gateway channel so
+                        attendants can follow along and take over at any time.
+                    </div>
+                </page>
+                <page string="IA (Groq)" name="ai_whatsapp">
+                    <group>
+                        <group string="Configuração">
+                            <field name="ai_enabled"/>
+                            <field name="ai_after_script"/>
+                            <field name="ai_connection_id" required="ai_enabled"/>
+                            <field name="ai_model"/>
+                            <field name="ai_tool_ids" widget="many2many_tags"/>
+                            <field name="ai_history_limit"/>
+                            <field name="ai_handoff_keywords"/>
+                        </group>
+                        <group string="Horários da Clínica">
+                            <field name="ai_open_hour" widget="float_time"/>
+                            <field name="ai_close_hour" widget="float_time"/>
+                            <field name="ai_lunch_start_hour" widget="float_time"/>
+                            <field name="ai_lunch_end_hour" widget="float_time"/>
+                        </group>
+                    </group>
+                    <group string="Atendimento da IA">
+                        <field name="ai_capabilities_text"/>
+                        <field name="ai_faq_list"/>
+                        <field name="ai_notice_message"/>
+                        <field name="ai_transfer_message"/>
+                        <field name="ai_system_prompt"/>
+                    </group>
                 </page>
             </xpath>
         </field>

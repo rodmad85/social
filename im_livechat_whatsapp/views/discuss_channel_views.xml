@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="discuss_channel_view_form_inherit_whatsapp_ai" model="ir.ui.view">
+        <field name="name">discuss.channel.form.whatsapp.ai</field>
+        <field name="model">discuss.channel</field>
+        <field name="inherit_id" ref="im_livechat.discuss_channel_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_ai_whatsapp_takeover" string="Assumir conversa" type="object" class="btn-primary" invisible="channel_type != 'livechat' or not ai_active or ai_handed_off"/>
+            </xpath>
+            <xpath expr="//sheet/group" position="inside">
+                <group string="IA WhatsApp" invisible="channel_type != 'livechat'">
+                    <field name="ai_active" readonly="1"/>
+                    <field name="ai_handed_off" readonly="1"/>
+                    <field name="ai_notice_sent" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
