@@ -123,6 +123,11 @@ msgid "Archived"
 msgstr "Archivado"
 
 #. module: mail_gateway_whatsapp
+#: model:ir.model,name:mail_gateway_whatsapp.model_mail_guest_manage
+msgid "Assign gateway guest to a partner"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
 #: model:ir.model.fields,field_description:mail_gateway_whatsapp.field_res_partner__message_attachment_count
 msgid "Attachment Count"
 msgstr "Recuento de archivos adjuntos"
@@ -1348,9 +1353,19 @@ msgid "We were not able to fetch value of field: %(field)s"
 msgstr "No pudimos obtener el valor del campo: %(field)s"
 
 #. module: mail_gateway_whatsapp
+#: model:ir.model.fields,field_description:mail_gateway_whatsapp.field_res_partner__website_message_ids
+msgid "Website Messages"
+msgstr "Mensajes del website"
+
+#. module: mail_gateway_whatsapp
 #: model:ir.model.fields,field_description:mail_gateway_whatsapp.field_mail_whatsapp_template_button__website_url
 msgid "Website Url"
 msgstr "URL del sitio web"
+
+#. module: mail_gateway_whatsapp
+#: model:ir.model.fields,help:mail_gateway_whatsapp.field_res_partner__website_message_ids
+msgid "Website communication history"
+msgstr "Histórico de comunicación del website"
 
 #. module: mail_gateway_whatsapp
 #: model:ir.model.fields.selection,name:mail_gateway_whatsapp.selection__mail_gateway__gateway_type__whatsapp
@@ -1489,9 +1504,3 @@ msgstr "sitio de negocio de meta."
 
 #~ msgid "Message content, to be used only in searches"
 #~ msgstr "Contenido del mensaje, que sólo se utilizará en las búsquedas"
-
-#~ msgid "Website Messages"
-#~ msgstr "Mensajes del website"
-
-#~ msgid "Website communication history"
-#~ msgstr "Histórico de comunicación del website"

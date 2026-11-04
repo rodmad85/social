@@ -47,13 +47,10 @@ class MailGatewayAbstract(models.AbstractModel):
 
     def _get_channel_vals(self, gateway, token, update):
         author = self._get_author(gateway, update)
-        # A conversa nasce apenas com o contato externo. Os usuários internos
-        # entram somente quando iniciam a conversa pelo chatter ou quando são
-        # atribuídos explicitamente (ver whatsapp_central_settings /
-        # mail_gateway_whatsapp_messages). Adicionar gateway.member_ids aqui
-        # fazia com que todos os administradores do gateway carregassem todas
-        # as conversas no Discuss.
-        members = []
+        members = [
+            Command.create({"partner_id": partner.id, "unpin_dt": False})
+            for partner in gateway.member_ids.partner_id
+        ]
         if author:
             members.append(
                 Command.create(

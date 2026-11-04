@@ -14,24 +14,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: mail_gateway_whatsapp
-#. odoo-javascript
-#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
-msgid "An error occurred when sending a WhatsApp message"
-msgstr ""
-
-#. module: mail_gateway_whatsapp
-#. odoo-javascript
-#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
-msgid "An error occurred when sending a WhatsApp message on \"%(record_name)s\""
-msgstr ""
-
-#. module: mail_gateway_whatsapp
-#. odoo-javascript
-#: code:addons/mail_gateway_whatsapp/static/src/core/common/failure_model_patch.esm.js:0
-msgid "WhatsApp"
-msgstr ""
-
-#. module: mail_gateway_whatsapp
 #: model_terms:ir.ui.view,arch_db:mail_gateway_whatsapp.mail_gateway_form_view
 msgid ""
 "<span>Define the values of the fields <b>Webhook Key</b> and <b>Whatsapp Security Key</b>.\n"
@@ -126,6 +108,11 @@ msgstr ""
 #. module: mail_gateway_whatsapp
 #: model:ir.model.fields.selection,name:mail_gateway_whatsapp.selection__mail_whatsapp_template__state__archived
 msgid "Archived"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
+#: model:ir.model,name:mail_gateway_whatsapp.model_mail_guest_manage
+msgid "Assign gateway guest to a partner"
 msgstr ""
 
 #. module: mail_gateway_whatsapp
@@ -1288,8 +1275,18 @@ msgid "We were not able to fetch value of field: %(field)s"
 msgstr ""
 
 #. module: mail_gateway_whatsapp
+#: model:ir.model.fields,field_description:mail_gateway_whatsapp.field_res_partner__website_message_ids
+msgid "Website Messages"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
 #: model:ir.model.fields,field_description:mail_gateway_whatsapp.field_mail_whatsapp_template_button__website_url
 msgid "Website Url"
+msgstr ""
+
+#. module: mail_gateway_whatsapp
+#: model:ir.model.fields,help:mail_gateway_whatsapp.field_res_partner__website_message_ids
+msgid "Website communication history"
 msgstr ""
 
 #. module: mail_gateway_whatsapp

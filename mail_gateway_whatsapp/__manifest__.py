@@ -4,7 +4,7 @@
 {
     "name": "Mail Whatsapp Gateway",
     "summary": "Set a gateway for WhatsApp",
-    "version": "18.0.2.1.4",
+    "version": "18.0.2.2.1",
     "license": "AGPL-3",
     "author": "Creu Blanca, Dixmit, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/social",
@@ -22,7 +22,6 @@
     "assets": {
         "web.assets_backend": [
             "mail_gateway_whatsapp/static/src/components/**/*",
-            "mail_gateway_whatsapp/static/src/core/**/*",
         ],
     },
 }
