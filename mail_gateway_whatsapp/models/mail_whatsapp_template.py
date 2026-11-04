@@ -355,21 +355,20 @@ class MailWhatsAppTemplate(models.Model):
                             )
                         else:
                             vals["button_ids"].append(Command.create(button_vals))
-            else:
-                is_supported = False
         vals["is_supported"] = is_supported
         return vals
 
     def _prepare_header_component(self, variable_ids_value):
         header = []
-        if self.header and variable_ids_value.get("header-{{1}}"):
-            value = variable_ids_value.get("header-{{1}}") or (self.header or {}) or ""
-            header = {"type": "header", "parameters": [{"type": "text", "text": value}]}
+        if self.header:
+            if variable_ids_value.get("header-{{1}}"):
+                value = variable_ids_value.get("header-{{1}}")
+            else:
+                value = self.header or ""
+            header = {"type": "header", "format": "TEXT", "text": value}
         return header
 
     def _prepare_body_components(self, variable_ids_value):
-        if not self.variable_ids:
-            return None
         parameters = []
         for body_val in self.variable_ids.filtered(
             lambda line: line.line_type == "body"
@@ -383,7 +382,7 @@ class MailWhatsAppTemplate(models.Model):
                     or " ",
                 }
             )
-        return {"type": "body", "parameters": parameters}
+        return {"type": "body", "text": self.body, "parameters": parameters}
 
     def _prepare_button_components(self, variable_ids_value):
         components = []
