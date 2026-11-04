@@ -109,7 +109,8 @@ class MailWhatsAppTemplateSend(models.Model):
                 record.state = "expired"
                 continue
             has_response = self.env["mail.message"].search_count([
-                ("channel_id", "=", record.channel_id.id),
+                ("model", "=", "discuss.channel"),
+                ("res_id", "=", record.channel_id.id),
                 ("date", ">", record.send_date),
                 ("gateway_type", "=", "whatsapp"),
                 ("author_id", "!=", False),
