@@ -8,18 +8,18 @@ class MailGatewayWhatsappService(models.AbstractModel):
     _inherit = "mail.gateway.whatsapp"
 
     def _process_update(self, chat, message, value):
-        """Mirror inbound gateway messages into the linked livechat channel.
-
-        The base implementation posts the webhook message on the gateway (bot)
-        channel. When the gateway is linked to an ``im_livechat.channel``, the
-        message is mirrored into the livechat conversation channel where the
-        operator answers, reusing the existing conversation by
-        ``gateway_channel_token``.
-        """
+        """Mirror inbound gateway messages into the linked livechat channel."""
+        import logging
+        _logger = logging.getLogger(__name__)
+        _logger.info("DEBUG _process_update: called for chat %s (type=%s)", chat.id, chat.channel_type)
+        
         super()._process_update(chat, message, value)
+        _logger.info("DEBUG _process_update: super() completed")
+        
         livechat_channel = self.env["im_livechat.channel"].search(
             [("whatsapp_gateway_id", "=", chat.gateway_id.id)], limit=1
         )
+        _logger.info("DEBUG _process_update: livechat_channel found=%s", livechat_channel.id if livechat_channel else False)
         if not livechat_channel:
             return
         posted = self.env["mail.message"].search(
@@ -31,6 +31,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
             order="id desc",
             limit=1,
         )
+        _logger.info("DEBUG _process_update: posted message found=%s", posted.id if posted else False)
         if not posted:
             return
         conversation = self.env["discuss.channel"].search(
@@ -41,13 +42,19 @@ class MailGatewayWhatsappService(models.AbstractModel):
             ],
             limit=1,
         )
+        _logger.info("DEBUG _process_update: existing conversation=%s", conversation.id if conversation else False)
         if not conversation:
+            _logger.info("DEBUG _process_update: calling _get_livechat_whatsapp_channel_vals for gateway=%s token=%s", chat.gateway_id.id, chat.gateway_channel_token)
             vals = self.env["discuss.channel"]._get_livechat_whatsapp_channel_vals(
                 chat.gateway_id, chat.gateway_channel_token, value
             )
+            _logger.info("DEBUG _process_update: vals returned=%s", bool(vals))
             if not vals:
+                _logger.warning("DEBUG _process_update: vals is empty, returning")
                 return
+            _logger.info("DEBUG _process_update: creating conversation")
             conversation = self.env["discuss.channel"].create(vals)
+            _logger.info("DEBUG _process_update: conversation created=%s", conversation.id)
             conversation._broadcast(
                 conversation.channel_member_ids.mapped("partner_id").ids
             )
@@ -56,6 +63,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
             conversation = conversation.with_user(
                 self.env.ref("base.public_user").id
             ).with_context(guest=author)
+        _logger.info("DEBUG _process_update: posting message to conversation=%s", conversation.id)
         conversation.sudo().with_context(no_gateway_notification=True).message_post(
             body=posted.body,
             author_id=author and author._name == "res.partner" and author.id,
@@ -64,3 +72,4 @@ class MailGatewayWhatsappService(models.AbstractModel):
             message_type="comment",
             attachment_ids=posted.attachment_ids.ids,
         )
+        _logger.info("DEBUG _process_update: message posted to conversation %s", conversation.id)
