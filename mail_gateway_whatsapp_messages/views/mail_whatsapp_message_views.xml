@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Conversation View -->
+    <record model="ir.ui.view" id="mail_whatsapp_conversation_tree_view">
+        <field name="name">mail.whatsapp.conversation.tree</field>
+        <field name="model">mail.whatsapp.conversation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="author_user_id" string="Autor" />
+                <field name="display_name" string="Destinatário" />
+                <field name="last_message_date" string="Última mensagem" />
+                <field name="last_message_body" string="Mensagem" optional="show" />
+                <field name="message_count" string="Mensagens" optional="show" />
+                <field name="phone" string="Telefone" optional="show" />
+                <field name="partner_user_id" string="Usuário" optional="show" />
+                <field name="is_unassigned" string="Não atribuída" widget="boolean_fa" optional="show" />
+                <button
+                    name="action_open_channel"
+                    type="object"
+                    string="Abrir Conversa"
+                    class="btn-primary"
+                />
+                <button
+                    name="action_claim"
+                    type="object"
+                    string="Assumir Conversa"
+                    class="btn-secondary"
+                    invisible="not is_unassigned"
+                />
+                <button
+                    name="action_auto_assign_by_phone"
+                    type="object"
+                    string="Buscar Contato"
+                    class="btn-info"
+                    invisible="not is_unassigned"
+                />
+                <button
+                    name="action_assign_contact"
+                    type="object"
+                    string="Atribuir Contato"
+                    class="btn-success"
+                    invisible="not is_unassigned"
+                />
+                <button
+                    name="action_link_unassigned"
+                    type="object"
+                    string="Vincular a Oportunidade"
+                    class="btn-primary"
+                    invisible="not is_unassigned"
+                />
+                <button
+                    name="action_link_opportunity"
+                    type="object"
+                    string="Vincular Oportunidade"
+                    class="btn-warning"
+                    invisible="not is_unassigned or has_crm_lead"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_conversation_search_view">
+        <field name="name">mail.whatsapp.conversation.search</field>
+        <field name="model">mail.whatsapp.conversation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="display_name" string="Contato" />
+                <filter
+                    name="filter_unassigned"
+                    string="Não Atribuídas"
+                    domain="[('is_unassigned', '=', True)]"
+                />
+                <separator />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="group_gateway"
+                        string="Gateway"
+                        context="{'group_by': 'gateway_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_conversation">
+        <field name="name">Conversas WhatsApp</field>
+        <field name="res_model">mail.whatsapp.conversation</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('is_unassigned', '=', False)]</field>
+        <field name="search_view_id" ref="mail_whatsapp_conversation_search_view" />
+        <field name="help" type="html">
+            <p>Lista de conversas WhatsApp agrupadas por contato.</p>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_conversation_unassigned">
+        <field name="name">Conversas Não Atribuídas</field>
+        <field name="res_model">mail.whatsapp.conversation</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('is_unassigned', '=', True)]</field>
+        <field name="search_view_id" ref="mail_whatsapp_conversation_search_view" />
+        <field name="help" type="html">
+            <p>Lista de conversas WhatsApp sem usuário atribuído.</p>
+        </field>
+    </record>
+
+    <!-- Individual Messages (existing, improved) -->
+    <record model="ir.ui.view" id="mail_whatsapp_message_kanban_view">
+        <field name="name">mail.message.whatsapp.kanban</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <kanban class="o_whatsapp_chat" edit="false">
+                <field name="is_whatsapp_incoming"/>
+                <field name="body"/>
+                <field name="author_id" widget="many2one_avatar"/>
+                <field name="date"/>
+                <field name="model"/>
+                <field name="res_id"/>
+                <templates>
+                    <t t-name="card">
+                        <div t-att-class="'o_whatsapp_row d-flex mb-2 px-3 ' + (record.is_whatsapp_incoming.raw_value ? 'justify-content-start' : 'justify-content-end')">
+                            <div t-att-class="'o_whatsapp_bubble ' + (record.is_whatsapp_incoming.raw_value ? 'o_whatsapp_incoming rounded-end-3 rounded-bottom-3' : 'o_whatsapp_outgoing rounded-start-3 rounded-bottom-3')">
+                                <div class="o_whatsapp_header d-flex align-items-center gap-2 mb-1">
+                                    <img t-att-src="record.author_id.raw_value ? ('/web/image/res.partner/' + record.author_id.raw_value + '/avatar_128') : ''"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="24" height="24" alt="Avatar"
+                                         t-att-style="record.author_id.raw_value ? '' : 'display: none;'"/>
+                                    <span class="o_whatsapp_author small fw-semibold text-truncate">
+                                        <t t-esc="record.author_id.value or 'System'"/>
+                                    </span>
+                                    <span class="o_whatsapp_time small text-muted ms-auto">
+                                        <t t-esc="record.date.value"/>
+                                    </span>
+                                </div>
+                                <div class="o_whatsapp_body"><field name="body"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_message_channel_tree_view">
+        <field name="name">mail.message.whatsapp.channel.tree</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <list default_order="date desc" class="o_whatsapp_chat_list" decoration-info="is_whatsapp_incoming" decoration-success="not is_whatsapp_incoming">
+                <field name="is_whatsapp_incoming" string="WhatsApp recebido" widget="boolean_fa" optional="show" />
+                <field name="whatsapp_author_name" string="Autor" />
+                <field name="date" optional="hide" />
+                <field name="body" />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_message_tree_view">
+        <field name="name">mail.message.whatsapp.tree</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <list default_order="date desc">
+                <field name="date" />
+                <field name="author_id" />
+                <field name="model" />
+                <field name="record_name" string="Document" />
+                <field name="subject" string="Subject" optional="show" />
+                <field name="body" optional="show" />
+                <field name="message_type" widget="badge" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_message_search_view">
+        <field name="name">mail.message.whatsapp.search</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="author_id" />
+                <field name="partner_ids" />
+                <field name="model" />
+                <field name="body" />
+                <field name="subject" />
+                <filter
+                    name="with_attachments"
+                    string="With Attachments"
+                    domain="[('attachment_ids', '!=', False)]"
+                />
+                <filter name="today" string="Today" date="date" />
+                <separator />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="group_model"
+                        string="Document Model"
+                        context="{'group_by': 'model'}"
+                    />
+                    <filter
+                        name="group_contact"
+                        string="Contact"
+                        context="{'group_by': 'partner_ids'}"
+                    />
+                    <filter
+                        name="group_author"
+                        string="Author"
+                        context="{'group_by': 'author_id'}"
+                    />
+                    <filter
+                        name="group_date"
+                        string="Date"
+                        context="{'group_by': 'date:month'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_message_form_view">
+        <field name="name">mail.message.whatsapp.form</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <form edit="0">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_open_document"
+                            type="object" class="oe_link" icon="fa-file-text-o"
+                            invisible="not model or res_id == 0">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Open Document</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" />
+                            <field name="author_id" />
+                            <field name="message_type" widget="badge" />
+                            <field name="subtype_id" />
+                        </group>
+                        <group>
+                            <field name="model" />
+                            <field name="res_id" />
+                            <field name="record_name" />
+                        </group>
+                    </group>
+                    <group string="Content">
+                        <field name="body" widget="html" colspan="2" />
+                    </group>
+                    <group string="Attachments" colspan="2" name="attachments_group">
+                        <field
+                            name="attachment_ids"
+                            nolabel="1"
+                            colspan="2"
+                            widget="many2many_binary"
+                        />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_message">
+        <field name="name">Mensagens WhatsApp</field>
+        <field name="res_model">mail.message</field>
+        <field name="view_mode">kanban,list,form,pivot</field>
+        <field name="search_view_id" ref="mail_whatsapp_message_search_view" />
+        <field name="domain">[('gateway_type', '=', 'whatsapp')]</field>
+        <field name="context">{
+            "search_default_group_contact": True,
+        }</field>
+        <field name="help" type="html">
+            <p>Lista de mensagens WhatsApp enviadas e recebidas através do gateway.</p>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mail_whatsapp_message_pivot_view">
+        <field name="name">mail.message.whatsapp.pivot</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="model" type="row" />
+                <field name="author_id" type="row" />
+                <field name="date" interval="month" type="col" />
+                <field name="id" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Menu items -->
+    <menuitem
+        id="menu_mail_whatsapp_messages_root"
+        name="WhatsApp"
+        parent="mail.menu_root_discuss"
+        sequence="50"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
+    />
+    <menuitem
+        id="menu_mail_whatsapp_conversations"
+        name="Conversas"
+        parent="menu_mail_whatsapp_messages_root"
+        action="action_mail_whatsapp_conversation"
+        sequence="5"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
+    />
+    <menuitem
+        id="menu_mail_whatsapp_conversations_unassigned"
+        name="Não Atribuídas"
+        parent="menu_mail_whatsapp_messages_root"
+        action="action_mail_whatsapp_conversation_unassigned"
+        sequence="6"
+        groups="sales_team.group_sale_manager,mail_gateway.gateway_user"
+    />
+    <menuitem
+        id="menu_mail_whatsapp_template_send"
+        name="Envios pendentes"
+        parent="menu_mail_whatsapp_messages_root"
+        action="mail_gateway_whatsapp_chatter.action_mail_whatsapp_template_send"
+        sequence="10"
+        groups="mail_gateway.gateway_user"
+    />
+</odoo>

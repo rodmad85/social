@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="whatsapp_link_opportunity_wizard_form_view">
+        <field name="name">whatsapp.link.opportunity.wizard.form</field>
+        <field name="model">whatsapp.link.opportunity.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="channel_id" invisible="1" />
+                    <field name="partner_id" invisible="1" />
+                    <field name="existing_opportunity_id"
+                           string="Oportunidade Existente"
+                           placeholder="Selecione uma oportunidade..."
+                           can_create="false"
+                           can_write="false" />
+                    <field name="new_opportunity_name"
+                           string="Ou crie uma nova oportunidade"
+                           placeholder="Digite o nome da nova oportunidade" />
+                </group>
+                <footer>
+                    <button
+                        name="action_link"
+                        type="object"
+                        string="Vincular"
+                        class="btn-primary"
+                    />
+                    <button
+                        string="Cancelar"
+                        class="btn-secondary"
+                        special="cancel"
+                    />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
