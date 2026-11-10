@@ -355,21 +355,20 @@ class MailWhatsAppTemplate(models.Model):
                             )
                         else:
                             vals["button_ids"].append(Command.create(button_vals))
-            else:
-                is_supported = False
         vals["is_supported"] = is_supported
         return vals
 
     def _prepare_header_component(self, variable_ids_value):
         header = []
-        if self.header and variable_ids_value.get("header-{{1}}"):
-            value = variable_ids_value.get("header-{{1}}") or (self.header or {}) or ""
-            header = {"type": "header", "parameters": [{"type": "text", "text": value}]}
+        if self.header:
+            if variable_ids_value.get("header-{{1}}"):
+                value = variable_ids_value.get("header-{{1}}")
+            else:
+                value = self.header or ""
+            header = {"type": "header", "format": "TEXT", "text": value}
         return header
 
     def _prepare_body_components(self, variable_ids_value):
-        if not self.variable_ids:
-            return None
         parameters = []
         for body_val in self.variable_ids.filtered(
             lambda line: line.line_type == "body"
@@ -383,7 +382,7 @@ class MailWhatsAppTemplate(models.Model):
                     or " ",
                 }
             )
-        return {"type": "body", "parameters": parameters}
+        return {"type": "body", "text": self.body, "parameters": parameters}
 
     def _prepare_button_components(self, variable_ids_value):
         components = []
@@ -415,18 +414,8 @@ class MailWhatsAppTemplate(models.Model):
                 rec_id = rec_ids
             else:
                 rec_id = None
-        record = False
         if model_name and rec_id:
             record = self.env[model_name].browse(int(rec_id))
-        if self.variable_ids and not record:
-            raise UserError(
-                self.env._(
-                    "Variables of whatsapp template %(name)s cannot be "
-                    "resolved because no document was provided to extract "
-                    "their values.",
-                    name=self.name,
-                )
-            )
         components = []
         variable_ids_value = self.variable_ids._get_variables_value(record)
         # generate components
@@ -450,18 +439,8 @@ class MailWhatsAppTemplate(models.Model):
                 rec_id = rec_ids[0]
             else:
                 rec_id = None
-        record = False
         if model_name and rec_id:
             record = self.env[model_name].browse(int(rec_id))
-        if self.variable_ids and not record:
-            raise UserError(
-                self.env._(
-                    "Variables of whatsapp template %(name)s cannot be "
-                    "resolved because no document was provided to extract "
-                    "their values.",
-                    name=self.name,
-                )
-            )
         header = ""
         if self.header:
             header = self.header

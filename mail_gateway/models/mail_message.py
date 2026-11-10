@@ -113,14 +113,16 @@ class MailMessage(models.Model):
         return result
 
     def _send_to_gateway_thread(self, gateway_channel_id):
+        from odoo.tests import RecordCapturer
+
         chat_id = gateway_channel_id.gateway_id._get_channel_id(
             gateway_channel_id.gateway_token
         )
         channel = self.env["discuss.channel"].browse(chat_id)
-        messages = channel.message_post(**self._get_gateway_thread_message_vals())
-        notification = messages.notification_ids.filtered(
-            lambda n: n.gateway_channel_id == channel
-        )
+        with RecordCapturer(
+            self.env["mail.notification"], [("gateway_channel_id", "=", channel.id)]
+        ) as capt:
+            channel.message_post(**self._get_gateway_thread_message_vals())
         if not self.gateway_type:
             self.gateway_type = gateway_channel_id.gateway_id.gateway_type
         notification_vals = {
@@ -130,6 +132,7 @@ class MailMessage(models.Model):
             "notification_type": "gateway",
             "gateway_type": gateway_channel_id.gateway_id.gateway_type,
         }
+        notification = capt.records
         if notification:
             # Set the same gateway_message_id for both notifications.
             # When the webhook is received, both notifications must be updated.
