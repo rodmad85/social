@@ -92,6 +92,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     [
                         ("partner_id", "in", partners.ids),
                         ("active", "=", True),
+                        ("share", "=", False),
                     ]
                 )
                 for user in active_users:

@@ -65,7 +65,14 @@ class DiscussChannel(models.Model):
             for member in self.channel_member_ids:
                 partner = member.partner_id
                 if partner and partner.user_ids:
-                    for user in partner.user_ids.filtered(lambda u: u.active):
+                    # The channel also contains the external contact. When that
+                    # contact has a portal user, rendering the store with it
+                    # raises an AccessError on mail.followers and aborts the
+                    # whole inbound webhook (403). Portal users do not consume
+                    # the internal bus, so only notify internal users.
+                    for user in partner.user_ids.filtered(
+                        lambda u: u.active and not u.share
+                    ):
                         user._bus_send_store(
                             message.with_user(user).with_context(allowed_company_ids=[]),
                             notification_type="mail.record/insert",
