@@ -100,7 +100,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
         messages = update.get("messages")
         if not messages:
             return False
-        author_id = messages[0].get("from")
+        author_id = messages[0].get("from") or messages[0].get("from_user_id") or messages[0].get("user_id")
         if author_id:
             gateway_partner = self.env["res.partner.gateway.channel"].search(
                 [
@@ -118,21 +118,16 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 partner = self.env["res.partner"].search(
                     [("phone_sanitized", "=", str(author_id))], limit=1
                 )
-            if not partner:
-                candidates = [str(author_id)]
-                if len(str(author_id)) == 12:
-                    candidates.append(str(author_id)[:4] + "9" + str(author_id)[4:])
-                elif len(str(author_id)) == 13:
-                    candidates.append(str(author_id)[:4] + str(author_id)[5:])
-                for candidate in candidates:
-                    partner = self.env["res.partner"].search(
-                        [
-                            ("phone_sanitized", "=like", "%" + candidate[-8:]),
-                        ],
-                        limit=1,
-                    )
-                    if partner:
-                        break
+            if not partner and not str(author_id).isdigit():
+                # BSUID-only user: use the BSUID to find/create a partner
+                partner = self.env["res.partner"].sudo().create(
+                    {
+                        "name": str(author_id),
+                        "wa_user_id": str(author_id),
+                        "is_whatsapp_number": True,
+                    }
+                )
+                return partner
             if partner:
                 self.env["res.partner.gateway.channel"]._get_or_create_for_gateway(
                     partner, gateway, str(author_id)

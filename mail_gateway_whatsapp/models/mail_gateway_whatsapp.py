@@ -13,7 +13,7 @@ import requests
 import requests_toolbelt
 from markupsafe import Markup
 
-from odoo import models
+from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.http import request
 from odoo.tools import html2plaintext, plaintext2html
@@ -66,12 +66,70 @@ class MailGatewayWhatsappService(models.AbstractModel):
         ).hexdigest()
         return f"sha256={hex_dig}" == signature
 
+    @api.model
+    def _whatsapp_is_bsuid(self, identifier):
+        """Return whether ``identifier`` is a business-scoped user ID (BSUID).
+
+        Phone numbers are always digits (Meta strips the leading ``+``), while
+        BSUIDs have the shape ``<COUNTRY>.<DIGITS>``.
+        """
+        identifier = str(identifier or "")
+        return bool(identifier) and not identifier.isdigit()
+
+    @api.model
+    def _whatsapp_get_sender(self, data):
+        """Return the sender identifier of a message or call payload.
+
+        Meta may omit ``from`` when the user adopted a username. In that case
+        the BSUID is sent as ``from_user_id`` and must be used as fallback.
+        """
+        return data.get("from") or data.get("from_user_id") or data.get("user_id")
+
+    @api.model
+    def _whatsapp_get_recipient(self, data):
+        """Return the recipient identifier of a status payload.
+
+        ``recipient_id`` is replaced by ``recipient_user_id`` (BSUID) when the
+        user adopted a username.
+        """
+        return data.get("recipient_id") or data.get("recipient_user_id")
+
+    @api.model
+    def _whatsapp_find_partner(self, identifier):
+        """Find a partner by phone number or BSUID."""
+        identifier = str(identifier or "")
+        if not identifier:
+            return self.env["res.partner"]
+        if self._whatsapp_is_bsuid(identifier):
+            return self.env["res.partner"].search(
+                [("wa_user_id", "=", identifier)], limit=1
+            )
+        partner = self.env["res.partner"].search(
+            [("phone_sanitized", "=", "+" + identifier)], limit=1
+        )
+        if not partner:
+            partner = self.env["res.partner"].search(
+                [("phone_sanitized", "=", identifier)], limit=1
+            )
+        return partner
+
+    def _whatsapp_get_contact(self, identifier, update):
+        """Return the matching contact entry from a webhook value."""
+        for contact in update.get("contacts", []):
+            contact_id = contact.get("wa_id") or contact.get("user_id")
+            if contact_id == identifier:
+                return contact
+        return {}
+
     def _get_channel_vals(self, gateway, token, update):
         result = super()._get_channel_vals(gateway, token, update)
-        for contact in update.get("contacts", []):
-            if contact["wa_id"] == token:
-                result["name"] = contact["profile"]["name"]
-                continue
+        contact = self._whatsapp_get_contact(token, update)
+        if contact:
+            result["name"] = (
+                contact.get("profile", {}).get("name")
+                or contact.get("profile", {}).get("username")
+                or str(token)
+            )
         return result
 
     def _receive_update(self, gateway, update):
@@ -81,14 +139,25 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     if change["field"] != "messages":
                         continue
                     for message in change["value"].get("messages", []):
+                        token = self._whatsapp_get_sender(message)
+                        if not token:
+                            _logger.warning(
+                                "Ignoring WhatsApp message %s without "
+                                "from/from_user_id",
+                                message.get("id"),
+                            )
+                            continue
                         chat = self._get_channel(
-                            gateway, message["from"], change["value"], force_create=True
+                            gateway, token, change["value"], force_create=True
                         )
                         if not chat:
                             continue
                         self._process_update(chat, message, change["value"])
                     for status_info in change["value"].get("statuses", []):
-                        chat_id = gateway._get_channel_id(status_info["recipient_id"])
+                        recipient_id = self._whatsapp_get_recipient(status_info)
+                        if not recipient_id:
+                            continue
+                        chat_id = gateway._get_channel_id(recipient_id)
                         if status_info.get("status", "") != "failed" or not chat_id:
                             continue
                         self._process_update_status(chat_id, status_info)
@@ -434,7 +503,8 @@ class MailGatewayWhatsappService(models.AbstractModel):
         }
 
     def _get_author(self, gateway, update):
-        author_id = update.get("messages")[0].get("from")
+        messages = update.get("messages") or []
+        author_id = self._whatsapp_get_sender(messages[0]) if messages else False
         if author_id:
             gateway_partner = (
                 self.env["res.partner.gateway.channel"]
@@ -449,10 +519,34 @@ class MailGatewayWhatsappService(models.AbstractModel):
             )
             if gateway_partner:
                 return gateway_partner.partner_id
-            partner = self.env["res.partner"].search(
-                [("phone_sanitized", "=", "+" + str(author_id))], limit=1
-            )
+            partner = self._whatsapp_find_partner(author_id)
             if partner:
+                self.env["res.partner.gateway.channel"].create(
+                    {
+                        "name": gateway.name,
+                        "partner_id": partner.id,
+                        "gateway_id": gateway.id,
+                        "gateway_token": str(author_id),
+                    }
+                )
+                return partner
+            if self._whatsapp_is_bsuid(author_id):
+                # A BSUID-only user has no phone number to match, so create a
+                # partner to keep conversations and call permissions linked.
+                contact = self._whatsapp_get_contact(author_id, update)
+                profile = contact.get("profile") or {}
+                partner = (
+                    self.env["res.partner"]
+                    .sudo()
+                    .create(
+                        {
+                            "name": profile.get("name")
+                            or profile.get("username")
+                            or str(author_id),
+                            "wa_user_id": str(author_id),
+                        }
+                    )
+                )
                 self.env["res.partner.gateway.channel"].create(
                     {
                         "name": gateway.name,
@@ -478,13 +572,13 @@ class MailGatewayWhatsappService(models.AbstractModel):
         return False
 
     def _get_author_vals(self, gateway, author_id, update):
-        for contact in update.get("contacts", []):
-            if contact["wa_id"] == author_id:
-                return {
-                    "name": contact.get("profile", {}).get("name", "Anonymous"),
-                    "gateway_id": gateway.id,
-                    "gateway_token": str(author_id),
-                }
+        contact = self._whatsapp_get_contact(author_id, update)
+        if contact:
+            return {
+                "name": contact.get("profile", {}).get("name", "Anonymous"),
+                "gateway_id": gateway.id,
+                "gateway_token": str(author_id),
+            }
 
     def _get_proxies(self):
         # This hook has been created in order to add a proxy if needed.

@@ -30,6 +30,16 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     self._receive_calls_update(gateway, change["value"])
         return super()._receive_update(gateway, update)
 
+    @api.model
+    def _whatsapp_get_sender(self, data):
+        """Return the sender identifier of a message or call payload."""
+        return data.get("from") or data.get("from_user_id") or data.get("user_id")
+
+    @api.model
+    def _whatsapp_get_recipient(self, data):
+        """Return the recipient identifier of a status payload."""
+        return data.get("recipient_id") or data.get("recipient_user_id")
+
     def _receive_calls_update(self, gateway, value):
         try:
             from odoo.http import request
@@ -48,6 +58,48 @@ class MailGatewayWhatsappService(models.AbstractModel):
             )
         except Exception:
             _logger.exception("Error processing WhatsApp calls webhook")
+
+    def _receive_update(self, gateway, update):
+        # First, route call_permission_reply from messages field to the call controller
+        if update:
+            for entry in update["entry"]:
+                for change in entry["changes"]:
+                    if change["field"] != "messages":
+                        continue
+                    for message in change["value"].get("messages", []):
+                        interactive = message.get("interactive") or {}
+                        if interactive.get("type") == "call_permission_reply":
+                            try:
+                                from odoo.http import request
+                                from odoo.addons.odoo_whatsapp_calling.controllers.main_meta import (
+                                    WaCallWebhook,
+                                )
+
+                                controller = WaCallWebhook()
+                                full_data = {
+                                    "entry": [
+                                        {
+                                            "changes": [
+                                                {"value": change["value"]}
+                                            ]
+                                        }
+                                    ]
+                                }
+                                if request:
+                                    request.update_context(
+                                        whatsapp_call_restrict_channel=True
+                                    )
+                                controller._process_calls_update(full_data)
+                            except ImportError:
+                                _logger.warning(
+                                    "odoo_whatsapp_calling not installed, "
+                                    "ignoring call_permission_reply"
+                                )
+                            except Exception:
+                                _logger.exception(
+                                    "Error processing call_permission_reply"
+                                )
+        return super()._receive_update(gateway, update)
 
 
 class Provider(models.Model):

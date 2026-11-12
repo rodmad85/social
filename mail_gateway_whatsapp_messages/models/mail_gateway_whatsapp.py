@@ -14,12 +14,17 @@ PARAM_UNASSIGNED_USER = "whatsapp_central_settings.wa_unassigned_user_id"
 class MailGatewayWhatsappService(models.AbstractModel):
     _inherit = "mail.gateway.whatsapp"
 
-    def _get_message_body(self, record):
-        body = super()._get_message_body(record)
-        author = record.mail_message_id.author_id
-        if author and body:
-            body = f"*{author.name}*\n\n{body}"
-        return body
+    def _whatsapp_get_sender(self, message):
+        return (
+            message.get("from") or message.get("from_user_id") or message.get("user_id")
+        )
+
+    def _whatsapp_get_recipient(self, data):
+        return data.get("recipient_id") or data.get("recipient_user_id")
+
+    def _whatsapp_is_bsuid(self, identifier):
+        identifier = str(identifier or "")
+        return bool(identifier) and not identifier.isdigit()
 
     def _get_author(self, gateway, update):
         author = super()._get_author(gateway, update)
@@ -28,7 +33,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
         messages = update.get("messages")
         if not messages:
             return author
-        author_id = messages[0].get("from")
+        author_id = self._whatsapp_get_sender(messages[0])
         if author_id:
             candidates = [str(author_id)]
             if len(str(author_id)) == 12:
@@ -50,8 +55,15 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     return partner
         return author
 
+    def _get_message_body(self, record):
+        body = super()._get_message_body(record)
+        author = record.mail_message_id.author_id
+        if author and body:
+            body = f"*{author.name}*\n\n{body}"
+        return body
+
     def _receive_update(self, gateway, update):
-        affected_phones = set()
+        affected_senders = set()
         first_value = None
         has_messages = False
         if update:
@@ -64,21 +76,22 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     if change["value"].get("messages"):
                         has_messages = True
                     for message in change["value"].get("messages", []):
-                        if message.get("from"):
-                            affected_phones.add(message["from"])
+                        sender = self._whatsapp_get_sender(message)
+                        if sender:
+                            affected_senders.add(sender)
         super()._receive_update(gateway, update)
         author = (
             self._get_author(gateway, first_value)
             if first_value and has_messages
             else False
         )
-        for phone in affected_phones:
-            channel = self._get_channel_by_phone_or_partner(gateway, phone, author)
+        for sender in affected_senders:
+            channel = self._get_channel_by_phone_or_partner(gateway, sender, author)
             if not channel:
                 continue
             if author and author._name == "res.partner":
                 if not channel.name:
-                    suffix = self._get_phone_description(phone)
+                    suffix = self._get_phone_description(sender)
                     channel.name = (
                         f"{author.display_name} ({suffix})"
                         if suffix
