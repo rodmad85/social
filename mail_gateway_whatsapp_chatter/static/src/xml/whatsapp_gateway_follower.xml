@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail_gateway.GatewayFollowerView" t-inherit-mode="extension">
+        <xpath expr="//select[@name='gatewayChannel']" position="attributes">
+            <attribute name="t-att-value">state.channel</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_gateway_composer_selector')]" position="inside">
+            <select
+                name="whatsappTemplate"
+                class="o_whatsapp_template_selector form-select form-select-sm d-inline-block w-auto ms-2"
+                t-on-change="onChangeTemplate"
+            >
+                <option value="">Selecionar modelo...</option>
+                <option
+                    t-foreach="state.templates"
+                    t-as="template"
+                    t-key="template.id"
+                    t-att-value="template.id"
+                    t-esc="template.name"
+                />
+            </select>
+            <span class="d-inline-flex align-items-center ms-2">
+                <input
+                    type="checkbox"
+                    disabled="disabled"
+                    class="form-check-input mt-0"
+                    t-att-checked="props.composer.thread.has_whatsapp_conversation"
+                />
+                <span class="text-muted small ms-1">Conversa iniciada</span>
+            </span>
+        </xpath>
+    </t>
+</templates>

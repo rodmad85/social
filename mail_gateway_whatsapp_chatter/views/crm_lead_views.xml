@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="crm_lead_whatsapp_claim_button_form">
+        <field name="name">crm.lead.whatsapp.claim.button</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_claim_whatsapp_conversation"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-whatsapp"
+                    invisible="not whatsapp_channel_id"
+                >
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">WhatsApp</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

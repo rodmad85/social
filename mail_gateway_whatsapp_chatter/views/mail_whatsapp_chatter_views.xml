@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="mail_whatsapp_chatter_link_tree_view">
+        <field name="name">mail.whatsapp.chatter.link.tree</field>
+        <field name="model">mail.whatsapp.chatter.link</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="display_name" />
+                <field name="channel_id" />
+                <field name="res_model" />
+                <field name="res_id" />
+                <field name="partner_id" />
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mail_whatsapp_chatter_link">
+        <field name="name">WhatsApp Chatter Links</field>
+        <field name="res_model">mail.whatsapp.chatter.link</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

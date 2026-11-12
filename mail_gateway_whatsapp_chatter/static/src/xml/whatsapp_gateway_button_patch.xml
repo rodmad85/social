@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o-mail-Chatter-gateway')]" position="attributes">
+            <attribute name="t-att-class">{
+                'btn-primary active': state.composerType === 'gateway' and !state.whatsappActive,
+                'btn-secondary': state.composerType !== 'gateway' or state.whatsappActive,
+                'my-2': !props.compactHeight
+            }</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('o-mail-Chatter-gateway')]/span" position="replace">
+            <span>Send</span>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="mail_gateway_whatsapp_call.SendWhatsappCallButton">
+        <a
+            t-att-title="title"
+            t-on-click.prevent.stop="onClick"
+            t-att-class="state.working ? 'ms-3 d-inline-flex align-items-center o_field_phone_whatsapp_call disabled' : 'ms-3 d-inline-flex align-items-center o_field_phone_whatsapp_call'"
+            t-att-aria-disabled="state.working"
+            role="button"
+        >
+            <i class="fa fa-phone" />
+            <small class="fw-bold ms-1">Call</small>
+        </a>
+    </t>
+
+</templates>
