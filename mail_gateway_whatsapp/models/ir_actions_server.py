@@ -69,12 +69,15 @@ class IrServerAction(models.Model):
             )
             body = markupsafe.Markup(
                 self.whatsapp_template_id.with_context(
-                    default_res_id=record.id
+                    default_res_model=record._name,
+                    default_res_id=record.id,
                 ).render_body_message()
             )
             # pylint: disable=translation-required
             record.with_context(
-                whatsapp_template_id=self.whatsapp_template_id.id, res_id=record.id
+                whatsapp_template_id=self.whatsapp_template_id.id,
+                default_res_model=record._name,
+                default_res_id=record.id,
             ).message_post(
                 body=body,
                 subtype_xmlid="mail.mt_comment",

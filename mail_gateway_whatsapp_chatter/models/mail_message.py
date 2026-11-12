@@ -89,7 +89,10 @@ class MailMessage(models.Model):
                     "partner_id": self.env.user.partner_id.id,
                 }
             )
-        posted_message = channel.message_post(**self._get_gateway_thread_message_vals())
+        posted_message = channel.with_context(
+            default_res_model=self.model,
+            default_res_id=self.res_id,
+        ).message_post(**self._get_gateway_thread_message_vals())
         if not self.gateway_type:
             self.gateway_type = gateway_channel_id.gateway_id.gateway_type
         notification_vals = {

@@ -366,14 +366,23 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 "to": channel.gateway_channel_token,
             }
             if whatsapp_template:
+                template = whatsapp_template.with_context(
+                    gateway_channel_id=channel.id
+                )
+                template_payload = {
+                    "name": template.template_name,
+                    "language": {
+                        "policy": "deterministic",
+                        "code": template.language,
+                    },
+                }
+                components = template.prepare_value_to_send()
+                if components:
+                    template_payload["components"] = components
                 payload.update(
                     {
                         "type": "template",
-                        "template": {
-                            "name": whatsapp_template.template_name,
-                            "language": {"code": whatsapp_template.language},
-                            "components": whatsapp_template.prepare_value_to_send(),
-                        },
+                        "template": template_payload,
                     }
                 )
             else:

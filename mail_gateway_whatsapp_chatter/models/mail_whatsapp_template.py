@@ -13,17 +13,73 @@ class MailWhatsAppTemplate(models.Model):
         ondelete="cascade",
     )
 
-    def prepare_value_to_send(self):
+    def _get_template_record(self):
+        """Return the record used to fill the template variables.
+
+        The chatter sends templates from a ``discuss.channel``, so the
+        record id is usually not present in the context. In that case use the
+        record linked to the channel (the CRM opportunity, for example).
+        """
         self.ensure_one()
-        model_name = self.model
+        model_name = self.model or "res.partner"
         rec_id = self.env.context.get("default_res_id")
         if rec_id is None:
-            rec_ids = self.env.context.get("res_id")
-            if rec_ids:
-                rec_id = rec_ids
-            else:
-                rec_id = None
-        record = self.env[model_name].browse(int(rec_id)) if model_name and rec_id else self.env[model_name]
+            rec_id = self.env.context.get("res_id")
+        if isinstance(rec_id, (list, tuple)):
+            rec_id = rec_id[0] if rec_id else None
+        context_model = self.env.context.get("default_res_model")
+
+        def _from_record(record_model, record_id):
+            record = self.env[record_model].browse(int(record_id))
+            if record_model == model_name:
+                return record
+            if model_name == "res.partner" and "partner_id" in record._fields:
+                return record.partner_id or self.env["res.partner"]
+            return None
+
+        # An explicit model/id pair in the context is the most reliable source.
+        if rec_id and context_model:
+            record = _from_record(context_model, rec_id)
+            if record is not None:
+                return record
+
+        # In the chatter the business record is linked to the channel and may
+        # be different from the template model (e.g. a crm.lead whose partner
+        # receives the message).
+        channel_id = self.env.context.get("gateway_channel_id")
+        if channel_id:
+            links = (
+                self.env["mail.whatsapp.chatter.link"]
+                .sudo()
+                .search(
+                    [("channel_id", "=", channel_id)],
+                    order="create_date desc, id desc",
+                )
+            )
+            for link in links:
+                if link.res_model == model_name:
+                    return self.env[model_name].browse(link.res_id)
+            for link in links:
+                if model_name != "res.partner":
+                    continue
+                if link.partner_id:
+                    return link.partner_id
+                record = self.env[link.res_model].browse(link.res_id)
+                if "partner_id" in record._fields and record.partner_id:
+                    return record.partner_id
+            return self.env[model_name]
+
+        # Automated actions set res_id but not default_res_model; in that case
+        # the template model is the action model.
+        if rec_id:
+            record = _from_record(context_model or model_name, rec_id)
+            if record is not None:
+                return record
+        return self.env[model_name]
+
+    def prepare_value_to_send(self):
+        self.ensure_one()
+        record = self._get_template_record()
         components = []
         variable_ids_value = self.variable_ids._get_variables_value(record)
         header = self._prepare_header_component(variable_ids_value=variable_ids_value)
@@ -38,31 +94,15 @@ class MailWhatsAppTemplate(models.Model):
 
     def render_body_message(self):
         self.ensure_one()
-        model_name = self.model
-        rec_id = self.env.context.get("default_res_id")
-        if rec_id is None:
-            rec_ids = self.env.context.get("default_res_ids")
-            if isinstance(rec_ids, list) and rec_ids:
-                rec_id = rec_ids[0]
-            else:
-                rec_id = None
-        record = self.env[model_name].browse(int(rec_id)) if model_name and rec_id else self.env[model_name]
-        header = ""
-        if self.header:
-            header = self.header
-            header_vars = self.variable_ids.filtered(lambda v: v.line_type == "header")
-            for i, var in enumerate(header_vars, start=1):
-                placeholder = f"{{{{{i}}}}}"
-                value = var._get_variables_value(record).get(
-                    f"header-{placeholder}", ""
-                )
-                header = header.replace(placeholder, str(value))
+        record = self._get_template_record()
+        header = self.header or ""
+        for var in self.variable_ids.filtered(lambda v: v.line_type == "header"):
+            value = var._get_variables_value(record).get(f"header-{var.name}", "")
+            header = header.replace(var.name, str(value))
         body = self.body or ""
-        body_vars = self.variable_ids.filtered(lambda v: v.line_type == "body")
-        for i, var in enumerate(body_vars, start=1):
-            placeholder = f"{{{{{i}}}}}"
-            value = var._get_variables_value(record).get(f"body-{placeholder}", "")
-            body = body.replace(placeholder, str(value))
+        for var in self.variable_ids.filtered(lambda v: v.line_type == "body"):
+            value = var._get_variables_value(record).get(f"body-{var.name}", "")
+            body = body.replace(var.name, str(value))
         message = f"*{header}*\n\n{body}" if header else body
         return message
 

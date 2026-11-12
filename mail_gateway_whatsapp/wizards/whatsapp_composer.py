@@ -69,7 +69,10 @@ class WhatsappComposer(models.TransientModel):
     @api.onchange("template_id")
     def onchange_template_id(self):
         if self.template_id:
-            self.body = self.template_id.render_body_message()
+            self.body = self.template_id.with_context(
+                default_res_model=self.res_model,
+                default_res_id=self.res_id,
+            ).render_body_message()
 
     @api.model
     def default_get(self, fields):
@@ -85,7 +88,11 @@ class WhatsappComposer(models.TransientModel):
         if not record:
             return
         channel = record._whatsapp_get_channel(self.number_field_name, self.gateway_id)
-        channel.with_context(whatsapp_template_id=self.template_id.id).message_post(
+        channel.with_context(
+            whatsapp_template_id=self.template_id.id,
+            default_res_model=self.res_model,
+            default_res_id=self.res_id,
+        ).message_post(
             body=self.body, subtype_xmlid="mail.mt_comment", message_type="comment"
         )
 

@@ -1,5 +1,6 @@
 # Copyright 2024 Tecnativa - Carlos López
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
+import logging
 import re
 from urllib.parse import urlparse
 
@@ -14,6 +15,8 @@ from odoo.addons.phone_validation.tools import phone_validation
 
 from ..tools.const import REG_VARIABLE, supported_languages
 from .mail_gateway import BASE_URL
+
+_logger = logging.getLogger(__name__)
 
 
 class MailWhatsAppTemplate(models.Model):
@@ -258,7 +261,9 @@ class MailWhatsAppTemplate(models.Model):
 
     def _prepare_components_to_export(self):
         body_component = {"type": "BODY", "text": self.body}
-        body_params = self.variable_ids.filtered(lambda line: line.line_type == "body")
+        body_params = self.variable_ids.filtered(
+            lambda line: line.line_type == "body"
+        ).sorted(lambda variable: variable._extract_variable_index() or 0)
         if body_params:
             body_component["example"] = {
                 "body_text": [body_params.mapped("sample_value")]
@@ -268,7 +273,7 @@ class MailWhatsAppTemplate(models.Model):
             header_component = {"type": "HEADER", "format": "TEXT", "text": self.header}
             header_params = self.variable_ids.filtered(
                 lambda line: line.line_type == "header"
-            )
+            ).sorted(lambda variable: variable._extract_variable_index() or 0)
             if header_params:
                 header_component["example"] = {
                     "header_text": header_params.mapped("sample_value")
@@ -358,31 +363,65 @@ class MailWhatsAppTemplate(models.Model):
         vals["is_supported"] = is_supported
         return vals
 
+    def _get_send_parameter_value(self, variable, variable_ids_value):
+        """Return a non-empty value for a template variable.
+
+        Meta rejects text parameters that are empty or only whitespace, so
+        fall back to the variable sample value when the record has no value.
+        """
+        value = variable_ids_value.get(f"{variable.line_type}-{variable.name}")
+        if not value:
+            value = variable.sample_value
+            _logger.warning(
+                "Template %s variable %s has no value for the record; "
+                "using the sample value %r.",
+                self.name,
+                variable.name,
+                value,
+            )
+        if not value:
+            raise UserError(
+                self.env._(
+                    "No value found for variable %(variable)s of template "
+                    "%(template)s. Configure the variable field or its sample "
+                    "value before sending.",
+                    variable=variable.name,
+                    template=self.name,
+                )
+            )
+        return str(value)
+
     def _prepare_header_component(self, variable_ids_value):
-        header = []
-        if self.header:
-            if variable_ids_value.get("header-{{1}}"):
-                value = variable_ids_value.get("header-{{1}}")
-            else:
-                value = self.header or ""
-            header = {"type": "header", "format": "TEXT", "text": value}
-        return header
+        header_variables = self.variable_ids.filtered(
+            lambda line: line.line_type == "header"
+        )
+        # Static headers must not be sent: the approved template already
+        # contains them. Only variable values are sent in the payload.
+        if not self.header or not header_variables:
+            return {}
+        value = self._get_send_parameter_value(
+            header_variables[0], variable_ids_value
+        )
+        return {
+            "type": "header",
+            "parameters": [{"type": "text", "text": value}],
+        }
 
     def _prepare_body_components(self, variable_ids_value):
-        parameters = []
-        for body_val in self.variable_ids.filtered(
+        body_variables = self.variable_ids.filtered(
             lambda line: line.line_type == "body"
-        ):
-            parameters.append(
-                {
-                    "type": "text",
-                    "text": variable_ids_value.get(
-                        f"{body_val.line_type}-{body_val.name}"
-                    )
-                    or " ",
-                }
-            )
-        return {"type": "body", "text": self.body, "parameters": parameters}
+        ).sorted(lambda variable: variable._extract_variable_index() or 0)
+        # A static body must not be sent: only its parameters are needed.
+        if not body_variables:
+            return {}
+        parameters = [
+            {
+                "type": "text",
+                "text": self._get_send_parameter_value(variable, variable_ids_value),
+            }
+            for variable in body_variables
+        ]
+        return {"type": "body", "parameters": parameters}
 
     def _prepare_button_components(self, variable_ids_value):
         components = []
@@ -391,31 +430,69 @@ class MailWhatsAppTemplate(models.Model):
         )
         index = {button: i for i, button in enumerate(self.button_ids)}
         for button in dynamic_buttons:
-            dynamic_url = button.website_url
-            value = variable_ids_value.get(f"button-{button.name}") or " "
-            value = value.replace(dynamic_url, "").lstrip("/")
+            dynamic_url = button.website_url or ""
+            # Meta expects only the variable part of the URL, so strip the
+            # static prefix configured on the button (before the {{1}}).
+            static_prefix = dynamic_url.split("{{", 1)[0]
+            if button.variable_ids:
+                value = self._get_send_parameter_value(
+                    button.variable_ids[0], variable_ids_value
+                )
+            else:
+                value = button.website_url or ""
+            if dynamic_url and value.startswith(dynamic_url):
+                value = value[len(dynamic_url) :]
+            elif static_prefix and value.startswith(static_prefix):
+                value = value[len(static_prefix) :]
+            value = value.lstrip("/")
+            if not value:
+                raise UserError(
+                    self.env._(
+                        "No value found for dynamic URL button %(button)s of "
+                        "template %(template)s.",
+                        button=button.name,
+                        template=self.name,
+                    )
+                )
             components.append(
                 {
                     "type": "button",
                     "sub_type": "url",
-                    "index": index.get(button),
+                    "index": str(index.get(button)),
                     "parameters": [{"type": "text", "text": value}],
                 }
             )
         return components
 
-    def prepare_value_to_send(self):
+    def _get_template_record(self):
+        """Return the record used to fill the template variables.
+
+        The record can be given by the context (``default_res_model`` /
+        ``default_res_id``). The chatter module extends this method to resolve
+        the record through the channel when the context has no record.
+        """
         self.ensure_one()
-        model_name = self.model_id.model
+        model_name = self.model or "res.partner"
         rec_id = self.env.context.get("default_res_id")
         if rec_id is None:
-            rec_ids = self.env.context.get("res_id")
-            if rec_ids:
-                rec_id = rec_ids
-            else:
-                rec_id = None
-        if model_name and rec_id:
-            record = self.env[model_name].browse(int(rec_id))
+            rec_id = self.env.context.get("res_id")
+        if isinstance(rec_id, (list, tuple)):
+            rec_id = rec_id[0] if rec_id else None
+        if not rec_id:
+            return self.env[model_name]
+        context_model = self.env.context.get("default_res_model") or model_name
+        record = self.env[context_model].browse(int(rec_id))
+        if context_model == model_name:
+            return record
+        # The template is applied to res.partner but the record that holds the
+        # values is another model (a crm.lead, for example).
+        if model_name == "res.partner" and "partner_id" in record._fields:
+            return record.partner_id or self.env["res.partner"]
+        return self.env[model_name]
+
+    def prepare_value_to_send(self):
+        self.ensure_one()
+        record = self._get_template_record()
         components = []
         variable_ids_value = self.variable_ids._get_variables_value(record)
         # generate components
@@ -431,32 +508,15 @@ class MailWhatsAppTemplate(models.Model):
 
     def render_body_message(self):
         self.ensure_one()
-        model_name = self.model_id.model
-        rec_id = self.env.context.get("default_res_id")
-        if rec_id is None:
-            rec_ids = self.env.context.get("default_res_ids")
-            if isinstance(rec_ids, list) and rec_ids:
-                rec_id = rec_ids[0]
-            else:
-                rec_id = None
-        if model_name and rec_id:
-            record = self.env[model_name].browse(int(rec_id))
-        header = ""
-        if self.header:
-            header = self.header
-            header_vars = self.variable_ids.filtered(lambda v: v.line_type == "header")
-            for i, var in enumerate(header_vars, start=1):
-                placeholder = f"{{{{{i}}}}}"
-                value = var._get_variables_value(record).get(
-                    f"header-{placeholder}", ""
-                )
-                header = header.replace(placeholder, str(value))
+        record = self._get_template_record()
+        header = self.header or ""
+        for var in self.variable_ids.filtered(lambda v: v.line_type == "header"):
+            value = var._get_variables_value(record).get(f"header-{var.name}", "")
+            header = header.replace(var.name, str(value))
         body = self.body or ""
-        body_vars = self.variable_ids.filtered(lambda v: v.line_type == "body")
-        for i, var in enumerate(body_vars, start=1):
-            placeholder = f"{{{{{i}}}}}"
-            value = var._get_variables_value(record).get(f"body-{placeholder}", "")
-            body = body.replace(placeholder, str(value))
+        for var in self.variable_ids.filtered(lambda v: v.line_type == "body"):
+            value = var._get_variables_value(record).get(f"body-{var.name}", "")
+            body = body.replace(var.name, str(value))
         message = f"*{header}*\n\n{body}" if header else body
         return message
 
