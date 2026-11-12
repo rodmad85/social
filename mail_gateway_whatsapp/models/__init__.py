@@ -1,5 +1,6 @@
 from . import ir_actions_server
 from . import mail_gateway
+from . import mail_notification
 from . import mail_thread
 from . import mail_gateway_whatsapp
 from . import discuss_channel
