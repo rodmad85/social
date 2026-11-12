@@ -12,7 +12,7 @@ patch(DiscussApp.prototype, {
                 return {
                     extraClass: "o-mail-DiscussSidebarCategory-gateway",
                     id: "gateway",
-                    name: _t("Whatsapp"),
+                    name: _t("Gateway"),
                     isOpen: false,
                     canView: false,
                     canAdd: true,
