@@ -131,9 +131,9 @@
                                     </span>
                                     <span
                                         class="o_whatsapp_mobile small text-muted text-truncate"
-                                        t-if="record.whatsapp_author_mobile"
+                                        t-if="record.whatsapp_author_mobile.value"
                                     >
-                                        <t t-esc="record.whatsapp_author_mobile"/>
+                                        <t t-esc="record.whatsapp_author_mobile.value"/>
                                     </span>
                                     <span class="o_whatsapp_time small text-muted ms-auto">
                                         <t t-esc="record.date.value"/>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Discuss" t-inherit-mode="extension">
+        <xpath expr="//t[contains(@t-if, 'thread.allowDescription')]" position="before">
+            <span
+                t-if="thread.channel_type === 'gateway' and thread.gatewayChannelToken"
+                class="o-mail-Discuss-threadPhone text-muted ms-2 text-truncate"
+            >
+                <t t-esc="thread.gatewayChannelToken"/>
+            </span>
+        </xpath>
+    </t>
+</templates>

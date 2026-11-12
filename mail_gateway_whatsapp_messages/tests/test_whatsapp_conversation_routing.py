@@ -194,3 +194,19 @@ class TestWhatsAppConversationRouting(TransactionCase):
             }
         )
         self.assertEqual(other.whatsapp_author_mobile, "+5511999999999")
+
+    def test_08_whatsapp_author_mobile_guest(self):
+        """Mensagens recebidas por convidado usam o token do canal como número."""
+        channel = self._create_channel(token="5511987654321")
+        guest = self.env["mail.guest"].create({"name": "Contato Convidado"})
+        message = self.env["mail.message"].create(
+            {
+                "model": "discuss.channel",
+                "res_id": channel.id,
+                "body": "Mensagem de convidado",
+                "message_type": "comment",
+                "gateway_type": "whatsapp",
+                "author_guest_id": guest.id,
+            }
+        )
+        self.assertEqual(message.whatsapp_author_mobile, "5511987654321")

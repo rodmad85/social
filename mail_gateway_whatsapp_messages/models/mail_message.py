@@ -25,13 +25,31 @@ class MailMessage(models.Model):
             else:
                 msg.whatsapp_author_name = "Desconhecido"
 
-    @api.depends("author_id", "author_guest_id", "gateway_type")
+    @api.depends("author_id", "author_guest_id", "gateway_type", "model", "res_id")
     def _compute_whatsapp_author_mobile(self):
-        """Retorna o mobile (WhatsApp) correspondente ao autor da mensagem."""
+        """Retorna o mobile (WhatsApp) correspondente ao autor da mensagem.
+
+        Mensagens recebidas de contatos do WhatsApp costumam ter um convidado
+        (``mail.guest``) como autor, ou um parceiro sem ``mobile``/``phone``
+        preenchido. Nesses casos o número do contato está no token do canal de
+        gateway, que é usado como fallback para que o número apareça também
+        nas conversas já existentes.
+        """
         for msg in self:
             mobile = False
-            if msg.gateway_type == "whatsapp" and msg.author_id:
-                mobile = msg.author_id.mobile or msg.author_id.phone or False
+            if msg.gateway_type == "whatsapp":
+                if msg.author_id:
+                    mobile = msg.author_id.mobile or msg.author_id.phone or False
+                author_is_contact = not msg.author_id or not msg.author_id.user_id
+                if (
+                    not mobile
+                    and author_is_contact
+                    and msg.model == "discuss.channel"
+                    and msg.res_id
+                ):
+                    channel = self.env["discuss.channel"].browse(msg.res_id)
+                    if channel.gateway_id.gateway_type == "whatsapp":
+                        mobile = channel.gateway_channel_token or False
             msg.whatsapp_author_mobile = mobile or ""
 
     @api.depends("gateway_type", "author_id", "author_guest_id")
