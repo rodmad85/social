@@ -8,6 +8,10 @@ class MailMessage(models.Model):
         compute="_compute_whatsapp_author_name",
         string="Autor",
     )
+    whatsapp_author_mobile = fields.Char(
+        compute="_compute_whatsapp_author_mobile",
+        string="WhatsApp Mobile",
+    )
 
     @api.depends("author_id", "author_guest_id", "gateway_type")
     def _compute_whatsapp_author_name(self):
@@ -20,6 +24,15 @@ class MailMessage(models.Model):
                 msg.whatsapp_author_name = msg.author_guest_id.name
             else:
                 msg.whatsapp_author_name = "Desconhecido"
+
+    @api.depends("author_id", "author_guest_id", "gateway_type")
+    def _compute_whatsapp_author_mobile(self):
+        """Retorna o mobile (WhatsApp) correspondente ao autor da mensagem."""
+        for msg in self:
+            mobile = False
+            if msg.gateway_type == "whatsapp" and msg.author_id:
+                mobile = msg.author_id.mobile or msg.author_id.phone or False
+            msg.whatsapp_author_mobile = mobile or ""
 
     @api.depends("gateway_type", "author_id", "author_guest_id")
     def _compute_is_whatsapp_incoming(self):

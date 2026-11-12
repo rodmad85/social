@@ -164,3 +164,33 @@ class TestWhatsAppConversationRouting(TransactionCase):
             self.env.user.partner_id,
             channel.channel_member_ids.partner_id,
         )
+
+    def test_07_whatsapp_author_mobile(self):
+        """O campo mobile do WhatsApp deve acompanhar o autor da mensagem."""
+        contact = self.env["res.partner"].create(
+            {"name": "Contato WhatsApp Mobile", "mobile": "+5511987654321"}
+        )
+        channel = self._create_channel(token="5511987654321")
+        message = self.env["mail.message"].create(
+            {
+                "model": "discuss.channel",
+                "res_id": channel.id,
+                "body": "Mensagem de teste",
+                "message_type": "comment",
+                "gateway_type": "whatsapp",
+                "author_id": contact.id,
+            }
+        )
+        self.assertEqual(message.whatsapp_author_mobile, "+5511987654321")
+
+        other = self.env["mail.message"].create(
+            {
+                "model": "discuss.channel",
+                "res_id": channel.id,
+                "body": "Outra mensagem",
+                "message_type": "comment",
+                "gateway_type": "whatsapp",
+                "author_id": self.contact.id,
+            }
+        )
+        self.assertEqual(other.whatsapp_author_mobile, "+5511999999999")

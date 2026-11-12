@@ -8,10 +8,10 @@
             <list>
                 <field name="author_user_id" string="Autor" />
                 <field name="display_name" string="Destinatário" />
+                <field name="phone" string="Telefone" optional="show" />
                 <field name="last_message_date" string="Última mensagem" />
                 <field name="last_message_body" string="Mensagem" optional="show" />
                 <field name="message_count" string="Mensagens" optional="show" />
-                <field name="phone" string="Telefone" optional="show" />
                 <field name="partner_user_id" string="Usuário" optional="show" />
                 <field name="is_unassigned" string="Não atribuída" widget="boolean_fa" optional="show" />
                 <button
@@ -113,6 +113,7 @@
                 <field name="is_whatsapp_incoming"/>
                 <field name="body"/>
                 <field name="author_id" widget="many2one_avatar"/>
+                <field name="whatsapp_author_mobile"/>
                 <field name="date"/>
                 <field name="model"/>
                 <field name="res_id"/>
@@ -127,6 +128,12 @@
                                          t-att-style="record.author_id.raw_value ? '' : 'display: none;'"/>
                                     <span class="o_whatsapp_author small fw-semibold text-truncate">
                                         <t t-esc="record.author_id.value or 'System'"/>
+                                    </span>
+                                    <span
+                                        class="o_whatsapp_mobile small text-muted text-truncate"
+                                        t-if="record.whatsapp_author_mobile"
+                                    >
+                                        <t t-esc="record.whatsapp_author_mobile"/>
                                     </span>
                                     <span class="o_whatsapp_time small text-muted ms-auto">
                                         <t t-esc="record.date.value"/>
@@ -148,6 +155,7 @@
             <list default_order="date desc" class="o_whatsapp_chat_list" decoration-info="is_whatsapp_incoming" decoration-success="not is_whatsapp_incoming">
                 <field name="is_whatsapp_incoming" string="WhatsApp recebido" widget="boolean_fa" optional="show" />
                 <field name="whatsapp_author_name" string="Autor" />
+                <field name="whatsapp_author_mobile" string="Mobile" optional="show" />
                 <field name="date" optional="hide" />
                 <field name="body" />
             </list>
@@ -161,6 +169,7 @@
             <list default_order="date desc">
                 <field name="date" />
                 <field name="author_id" />
+                <field name="whatsapp_author_mobile" string="Mobile" optional="show" />
                 <field name="model" />
                 <field name="record_name" string="Document" />
                 <field name="subject" string="Subject" optional="show" />
