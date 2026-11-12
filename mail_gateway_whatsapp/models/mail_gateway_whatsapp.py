@@ -295,6 +295,7 @@ class MailGatewayWhatsappService(models.AbstractModel):
                     new_related_message = (
                         self.env[related_message.gateway_message_id.model]
                         .browse(related_message.gateway_message_id.res_id)
+                        .with_context(mail_gateway_sync_no_notify=True)
                         .message_post(
                             body=body,
                             author_id=author

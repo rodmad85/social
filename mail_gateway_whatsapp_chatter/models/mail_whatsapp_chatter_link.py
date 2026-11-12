@@ -65,7 +65,7 @@ class MailWhatsappChatterLink(models.Model):
             return
         for message in messages:
             author_id = message.author_id.id if message.author_id and message.author_id._name == "res.partner" else False
-            record.sudo().message_post(
+            record.sudo().with_context(mail_gateway_sync_no_notify=True).message_post(
                 body=message.body,
                 author_id=author_id,
                 gateway_type="whatsapp",

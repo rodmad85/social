@@ -8,6 +8,17 @@ from odoo.exceptions import UserError
 class MailThread(models.AbstractModel):
     _inherit = "mail.thread"
 
+    def _notify_get_recipients(self, message, msg_vals, **kwargs):
+        # Copies of WhatsApp messages posted on business documents (chatter)
+        # must stay silent: the gateway channel is the single place where
+        # delivery notifications are handled. Without this, every incoming
+        # WhatsApp message would notify the document followers by e-mail
+        # (and create a failure notification when the SMTP server is not
+        # configured), duplicating the channel notification.
+        if self.env.context.get("mail_gateway_sync_no_notify"):
+            return []
+        return super()._notify_get_recipients(message, msg_vals, **kwargs)
+
     def _get_whatsapp_channel_vals(self, token, gateway, partner):
         result = {
             "gateway_channel_token": token,
