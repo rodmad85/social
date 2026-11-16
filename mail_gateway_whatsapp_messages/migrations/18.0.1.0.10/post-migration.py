@@ -50,17 +50,47 @@ def migrate(cr, version):
             correct_partner = partner
 
         if correct_partner and gc.partner_id != correct_partner:
-            _logger.info(
-                "Corrigindo gateway_channel %s: token=%s, "
-                "partner_errado=%s (%s) -> partner_correto=%s (%s)",
-                gc.id,
-                token,
-                gc.partner_id.name,
-                gc.partner_id.id,
-                correct_partner.name,
-                correct_partner.id,
+            # Verifica se o partner correto já possui outro gateway_channel
+            # no mesmo gateway (constraint UNIQUE(partner_id, gateway_id)).
+            existing = GatewayChannel.search(
+                [
+                    ("partner_id", "=", correct_partner.id),
+                    ("gateway_id", "=", gc.gateway_id.id),
+                    ("id", "!=", gc.id),
+                ],
+                limit=1,
             )
-            gc.write({"partner_id": correct_partner.id})
+            if existing:
+                # Já existe configuração para este partner/gateway: mescla
+                # preservando o token correto e remove o canal duplicado.
+                _logger.info(
+                    "Mesclando gateway_channel %s (token=%s, partner_errado=%s) "
+                    "no existente %s (partner_correto=%s). "
+                    "Token atual=%s -> novo=%s",
+                    gc.id,
+                    token,
+                    gc.partner_id.name,
+                    existing.id,
+                    correct_partner.name,
+                    existing.gateway_token,
+                    token,
+                )
+                # Transfere as mensagens/canal vinculados, se houver, antes
+                # de remover o duplicado (evita perda de histórico).
+                existing.write({"gateway_token": token})
+                gc.unlink()
+            else:
+                _logger.info(
+                    "Corrigindo gateway_channel %s: token=%s, "
+                    "partner_errado=%s (%s) -> partner_correto=%s (%s)",
+                    gc.id,
+                    token,
+                    gc.partner_id.name,
+                    gc.partner_id.id,
+                    correct_partner.name,
+                    correct_partner.id,
+                )
+                gc.write({"partner_id": correct_partner.id})
             fixed += 1
         elif not correct_partner:
             _logger.warning(
