@@ -41,9 +41,12 @@ class MailGatewayWhatsappService(models.AbstractModel):
             elif len(str(author_id)) == 13:
                 candidates.append(str(author_id)[:4] + str(author_id)[5:])
             for candidate in candidates:
+                # Busca exata pelo phone_sanitized completo para evitar conflitos
+                # entre contatos com os mesmos 8 últimos dígitos (ex: DDDs diferentes)
+                sanitized_candidate = "+" + candidate if not candidate.startswith("+") else candidate
                 wp = self.env["res.partner.whatsapp.phone"].search(
                     [
-                        ("phone_sanitized", "=like", "%" + candidate[-8:]),
+                        ("phone_sanitized", "=", sanitized_candidate),
                     ],
                     limit=1,
                 )
@@ -146,9 +149,11 @@ class MailGatewayWhatsappService(models.AbstractModel):
         elif len(phone_str) == 13:
             candidates.append(phone_str[:4] + phone_str[5:])
         for candidate in candidates:
+            # Busca exata pelo phone_sanitized completo para evitar conflitos
+            sanitized_candidate = "+" + candidate if not candidate.startswith("+") else candidate
             wp = self.env["res.partner.whatsapp.phone"].search(
                 [
-                    ("phone_sanitized", "=like", "%" + candidate[-8:]),
+                    ("phone_sanitized", "=", sanitized_candidate),
                 ],
                 limit=1,
             )
