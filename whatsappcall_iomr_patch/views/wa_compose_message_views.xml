@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        The call is now started by a client action returned by
+        `call_on_whatsapp`. Close the provider selection wizard as soon as
+        the button is clicked (the previous implementation returned no
+        action, which made Odoo close the dialog automatically).
+    -->
+    <record id="view_wa_compose_message_inherit_wa_call_patch" model="ir.ui.view">
+        <field name="name">wa.compose.message.inherit.wa.call.patch</field>
+        <field name="model">wa.compose.message</field>
+        <field
+            name="inherit_id"
+            ref="odoo_whatsapp_calling.view_wa_compose_message_inherit_wa_call"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='call_on_whatsapp']" position="attributes">
+                <attribute name="close">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
