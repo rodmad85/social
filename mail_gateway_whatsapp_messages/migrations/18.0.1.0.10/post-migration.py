@@ -69,12 +69,13 @@ def migrate(cr, version):
                 token,
             )
 
+    # Sempre recria a view pois a SQL foi corrigida (match exato vs parcial)
+    env["mail.whatsapp.conversation"].init()
+    _logger.info("View mail_whatsapp_conversation recriada com SQL corrigido.")
+
     if fixed:
         _logger.info(
             "WhatsApp migration: %s gateway_channels corrigidos.", fixed
         )
-        # Recria a view para refletir as correções
-        env["mail.whatsapp.conversation"].init()
-        _logger.info("View mail_whatsapp_conversation recriada.")
     else:
         _logger.info("WhatsApp migration: nenhum gateway_channel precisou de correção.")
