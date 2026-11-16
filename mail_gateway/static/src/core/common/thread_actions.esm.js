@@ -67,39 +67,19 @@ threadActionsRegistry
                 const channelData = await orm.silent.searchRead(
                     "discuss.channel",
                     [["id", "=", component.thread.id]],
-                    ["gateway_channel_token", "gateway_id"]
+                    ["gateway_channel_token"]
                 );
-                const channel = channelData[0];
-                if (channel?.gateway_channel_token) {
-                    // Filtra tambem pelo gateway_id: o mesmo token pode existir
-                    // em configuracoes de gateways diferentes.
-                    const domain = [["gateway_token", "=", channel.gateway_channel_token]];
-                    const gatewayId = Array.isArray(channel.gateway_id)
-                        ? channel.gateway_id[0]
-                        : channel.gateway_id;
-                    if (gatewayId) {
-                        domain.push(["gateway_id", "=", gatewayId]);
-                    }
+                if (channelData[0]?.gateway_channel_token) {
                     const gatewayChannel = await orm.silent.searchRead(
                         "res.partner.gateway.channel",
-                        domain,
+                        [["gateway_token", "=", channelData[0].gateway_channel_token]],
                         ["partner_id"]
                     );
-                    if (gatewayChannel[0]?.partner_id) {
-                        partnerId = Array.isArray(gatewayChannel[0].partner_id)
-                            ? gatewayChannel[0].partner_id[0]
-                            : gatewayChannel[0].partner_id;
-                    }
-                }
-                // NUNCA usar o id da persona quando ela for guest: guest e
-                // partner tem sequencias de id independentes (ex: guest 468 =
-                // Mauricio Duarte, mas partner 468 = outra pessoa). Abrir
-                // res.partner com esse id mostraria o contato errado.
-                if (!partnerId) {
-                    const persona = component.thread.correspondent?.persona;
-                    if (persona && persona.type === "partner") {
-                        partnerId = persona.id;
-                    }
+                    partnerId = Array.isArray(gatewayChannel[0]?.partner_id)
+                        ? gatewayChannel[0].partner_id[0]
+                        : gatewayChannel[0]?.partner_id;
+                } else {
+                    partnerId = component.thread.correspondent?.persona?.id;
                 }
                 component.thread._cachedPartnerId = partnerId;
                 component.thread._partnerIdChecked = true;
