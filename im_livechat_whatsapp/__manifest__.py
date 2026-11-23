@@ -4,7 +4,7 @@
 {
     "name": "Livechat WhatsApp Integration",
     "summary": "Integrate WhatsApp gateway with livechat channels",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.1",
     "license": "AGPL-3",
     "author": "Madooit, Odoo Community Association (OCA)",
     "maintainers": ["rodmad85"],

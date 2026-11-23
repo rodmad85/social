@@ -121,15 +121,30 @@ class MailGatewayWhatsappService(models.AbstractModel):
                 return contact
         return {}
 
+    def _whatsapp_get_channel_name(self, gateway, token, update, author=None):
+        """Return the display name of a WhatsApp conversation.
+
+        Registered contacts are shown with their Odoo name. Unregistered
+        contacts use the WhatsApp profile name (or username), falling back to
+        the guest name and finally to the phone number/token.
+        """
+        if author is None:
+            author = self._get_author(gateway, update)
+        if author and author._name == "res.partner":
+            return author.name
+        contact = self._whatsapp_get_contact(token, update)
+        profile = contact.get("profile") or {}
+        name = profile.get("name") or profile.get("username")
+        if not name and author:
+            name = author.name
+        return name or str(token)
+
     def _get_channel_vals(self, gateway, token, update):
         result = super()._get_channel_vals(gateway, token, update)
-        contact = self._whatsapp_get_contact(token, update)
-        if contact:
-            result["name"] = (
-                contact.get("profile", {}).get("name")
-                or contact.get("profile", {}).get("username")
-                or str(token)
-            )
+        author = self._get_author(gateway, update)
+        result["name"] = self._whatsapp_get_channel_name(
+            gateway, token, update, author=author
+        )
         return result
 
     def _receive_update(self, gateway, update):

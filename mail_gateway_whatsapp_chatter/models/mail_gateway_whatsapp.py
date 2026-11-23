@@ -197,8 +197,9 @@ class MailGatewayWhatsappService(models.AbstractModel):
     def _get_channel_vals(self, gateway, token, update):
         vals = super()._get_channel_vals(gateway, token, update)
         author = self._get_author(gateway, update)
-        if author and author._name == "res.partner":
-            vals["name"] = author.display_name
+        vals["name"] = self._whatsapp_get_channel_name(
+            gateway, token, update, author=author
+        )
         return vals
 
     def _post_process_message(self, message, channel):

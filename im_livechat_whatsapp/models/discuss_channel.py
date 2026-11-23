@@ -4,7 +4,7 @@
 import json
 import logging
 
-from odoo import Command, api, fields, models, _
+from odoo import api, fields, models
 from odoo.tools import html2plaintext
 
 _logger = logging.getLogger(__name__)
@@ -103,51 +103,19 @@ class DiscussChannel(models.Model):
         )
         return partner, partner.name
 
-    @api.model
-    def _get_livechat_whatsapp_channel_vals(self, gateway, token, update):
-        livechat_channel = self._get_whatsapp_livechat_channel(gateway)
-        if not livechat_channel:
-            return {}
-        operator_partner, operator_name = self._get_whatsapp_livechat_operator(
-            livechat_channel, gateway
-        )
-        if not operator_partner:
-            _logger.warning(
-                "No operator could be resolved for gateway %s: "
-                "conversation not created",
-                gateway.id,
-            )
-            return {}
-        author = self.env["mail.gateway.whatsapp"]._get_author(gateway, update)
-        name = token
-        for contact in update.get("contacts", []):
-            if contact.get("wa_id") == token:
-                name = contact.get("profile", {}).get("name", token)
-                break
-        member_partner_ids = set(gateway.member_ids.partner_id.ids)
-        member_partner_ids.add(operator_partner.id)
-        member_cmds = [
-            Command.create({"partner_id": partner_id, "unpin_dt": False})
-            for partner_id in member_partner_ids
-        ]
-        if author:
-            if author._name == "res.partner":
-                if author.id not in member_partner_ids:
-                    member_cmds.append(Command.create({"partner_id": author.id}))
-            elif author._name == "mail.guest":
-                member_cmds.append(Command.create({"guest_id": author.id}))
-        channel_name = " ".join(filter(None, [name, operator_name]))
-        return {
-            "name": channel_name,
-            "channel_type": "livechat",
-            "livechat_active": True,
-            "livechat_channel_id": livechat_channel.id,
-            "livechat_operator_id": operator_partner.id,
-            "gateway_channel_token": token,
-            "anonymous_name": name,
-            "channel_member_ids": member_cmds,
-            "company_id": gateway.company_id.id or False,
-        }
+    def _whatsapp_ai_livechat_channel(self):
+        """Return the livechat channel that configures the WhatsApp AI.
+
+        New gateway channels store ``livechat_channel_id``. Older channels
+        only have ``gateway_id``, so fall back to the ``im_livechat.channel``
+        linked to the gateway.
+        """
+        self.ensure_one()
+        if self.livechat_channel_id:
+            return self.livechat_channel_id
+        if self.gateway_id:
+            return self._get_whatsapp_livechat_channel(self.gateway_id)
+        return self.env["im_livechat.channel"]
 
     @api.model
     def _whatsapp_chatbot_lang(self, conversation, author=False):
@@ -171,7 +139,7 @@ class DiscussChannel(models.Model):
 
     @api.model
     def _whatsapp_chatbot_start(self, conversation, author=False):
-        script = conversation.livechat_channel_id.whatsapp_chatbot_script_id
+        script = conversation._whatsapp_ai_livechat_channel().whatsapp_chatbot_script_id
         if not script:
             return
         context = self._whatsapp_chatbot_context(conversation, author)
@@ -342,7 +310,7 @@ class DiscussChannel(models.Model):
 
     def _ai_whatsapp_activate(self):
         self.ensure_one()
-        lc = self.livechat_channel_id
+        lc = self._whatsapp_ai_livechat_channel()
         if not lc or not lc.ai_enabled:
             return
         if self.ai_notice_sent:
@@ -374,7 +342,7 @@ class DiscussChannel(models.Model):
             return False
         text_lower = html2plaintext(str(text)).lower()
         self.ensure_one()
-        lc = self.livechat_channel_id
+        lc = self._whatsapp_ai_livechat_channel()
         keywords = []
         if lc and lc.ai_handoff_keywords:
             keywords = [k.strip().lower() for k in lc.ai_handoff_keywords.split(",") if k.strip()]
@@ -403,7 +371,7 @@ class DiscussChannel(models.Model):
 
     def _ai_whatsapp_handoff(self, reason=""):
         self.ensure_one()
-        lc = self.livechat_channel_id
+        lc = self._whatsapp_ai_livechat_channel()
         self.write({"ai_active": False, "ai_handed_off": True})
         msg = lc.ai_transfer_message if lc and lc.ai_transfer_message else "Estou transferindo você para um atendente humano. Aguarde um momento."
         try:
@@ -437,7 +405,7 @@ class DiscussChannel(models.Model):
 
     def _ai_whatsapp_respond(self, user_msg, author=False):
         self.ensure_one()
-        lc = self.livechat_channel_id
+        lc = self._whatsapp_ai_livechat_channel()
         if not lc or not lc.ai_enabled or not lc.ai_connection_id:
             return
         if self.ai_handed_off:
@@ -508,87 +476,6 @@ class DiscussChannel(models.Model):
         if tool_rec.function_name == "ai_whatsapp_tool_get_prices":
             return self.ai_whatsapp_tool_get_prices(**args)
         return {}
-
-    def _get_whatsapp_livechat_channel(self, gateway):
-        """Return the ``im_livechat.channel`` linked to ``gateway`` if any."""
-        return self.env["im_livechat.channel"].search(
-            [("whatsapp_gateway_id", "=", gateway.id)], limit=1
-        )
-
-    def _get_whatsapp_gateway_channel(self):
-        """Return the gateway (bot) channel paired to this conversation
-        channel for the same WhatsApp phone number."""
-        if not self.gateway_channel_token or not self.livechat_channel_id:
-            return self.env["discuss.channel"]
-        gateway = self.livechat_channel_id.whatsapp_gateway_id
-        if not gateway:
-            return self.env["discuss.channel"]
-        return self.search(
-            [
-                ("channel_type", "=", "gateway"),
-                ("gateway_id", "=", gateway.id),
-                ("gateway_channel_token", "=", self.gateway_channel_token),
-            ],
-            limit=1,
-        )
-
-    @api.model
-    def _get_livechat_whatsapp_channel_vals(self, gateway, token, update):
-        """Build channel vals for the livechat conversation channel paired to
-        a WhatsApp gateway.
-
-        The gateway (bot) channel is created by the base ``mail_gateway``
-        module with ``channel_type='gateway'``. This method builds the
-        ``channel_type='livechat'`` conversation channel where operators
-        answer. It does NOT set ``gateway_id`` so that the automatic send
-        handled by ``mail_gateway`` never fires on this channel: outbound
-        messages are routed to the paired gateway channel instead.
-        """
-        livechat_channel = self._get_whatsapp_livechat_channel(gateway)
-        if not livechat_channel:
-            return {}
-        user_operator = livechat_channel._get_operator()
-        if not user_operator:
-            _logger.warning("No livechat operator available for gateway %s", gateway.id)
-            return {}
-        author = self.env["mail.gateway.whatsapp"]._get_author(gateway, update)
-        name = token
-        for contact in update.get("contacts", []):
-            if contact.get("wa_id") == token:
-                name = contact.get("profile", {}).get("name", token)
-                break
-        member_partner_ids = set(gateway.member_ids.partner_id.ids)
-        member_partner_ids.add(user_operator.partner_id.id)
-        member_cmds = [
-            Command.create({"partner_id": partner_id, "unpin_dt": False})
-            for partner_id in member_partner_ids
-        ]
-        if author:
-            if author._name == "res.partner":
-                if author.id not in member_partner_ids:
-                    member_cmds.append(Command.create({"partner_id": author.id}))
-            elif author._name == "mail.guest":
-                member_cmds.append(Command.create({"guest_id": author.id}))
-        channel_name = " ".join(
-            filter(
-                None,
-                [
-                    name,
-                    user_operator.livechat_username or user_operator.name,
-                ],
-            )
-        )
-        return {
-            "name": channel_name,
-            "channel_type": "livechat",
-            "livechat_active": True,
-            "livechat_channel_id": livechat_channel.id,
-            "livechat_operator_id": user_operator.partner_id.id,
-            "gateway_channel_token": token,
-            "anonymous_name": name,
-            "channel_member_ids": member_cmds,
-            "company_id": gateway.company_id.id or False,
-        }
 
     @api.returns("mail.message", lambda value: value.id)
     def message_post(self, *, message_type="notification", **kwargs):

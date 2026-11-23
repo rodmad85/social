@@ -92,14 +92,11 @@ class MailGatewayWhatsappService(models.AbstractModel):
             channel = self._get_channel_by_phone_or_partner(gateway, sender, author)
             if not channel:
                 continue
-            if author and author._name == "res.partner":
-                if not channel.name:
-                    suffix = self._get_phone_description(sender)
-                    channel.name = (
-                        f"{author.display_name} ({suffix})"
-                        if suffix
-                        else author.display_name
-                    )
+            channel_name = self._whatsapp_get_channel_name(
+                gateway, sender, first_value, author=author
+            )
+            if channel_name and channel.name != channel_name:
+                channel.name = channel_name
             # Atribui somente quando ainda não há usuário interno responsável.
             # Se alguém iniciou a conversa pelo chatter ou já foi atribuído, a
             # resposta é entregue apenas a essa pessoa.

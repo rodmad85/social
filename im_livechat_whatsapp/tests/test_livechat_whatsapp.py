@@ -4,6 +4,7 @@
 import hashlib
 import hmac
 import json
+from copy import deepcopy
 from unittest.mock import MagicMock, patch
 
 from odoo import Command
@@ -25,6 +26,7 @@ class TestLivechatWhatsapp(HttpCase):
                 "groups_id": [
                     Command.link(cls.env.ref("base.group_user").id),
                     Command.link(cls.env.ref("im_livechat.im_livechat_group_user").id),
+                    Command.link(cls.env.ref("mail_gateway.gateway_user").id),
                 ],
             }
         )
@@ -39,6 +41,10 @@ class TestLivechatWhatsapp(HttpCase):
                     Command.link(cls.env.ref("mail_gateway.gateway_user").id),
                 ],
             }
+        )
+        # Make the operator available so livechat can assign it.
+        cls.env["bus.presence"].create(
+            {"user_id": cls.operator_user.id, "status": "online"}
         )
         # Create a WhatsApp gateway
         cls.gateway = cls.env["mail.gateway"].create(
@@ -130,28 +136,18 @@ class TestLivechatWhatsapp(HttpCase):
             },
         )
 
-    def _gateway_channel(self, gateway):
+    def _gateway_channels(self, gateway=None):
+        gateway = gateway or self.gateway
         return self.env["discuss.channel"].search(
             [
                 ("gateway_id", "=", gateway.id),
                 ("channel_type", "=", "gateway"),
-            ],
-            limit=1,
-        )
-
-    def _conversation_channel(self, livechat_channel, token):
-        return self.env["discuss.channel"].search(
-            [
-                ("channel_type", "=", "livechat"),
-                ("livechat_channel_id", "=", livechat_channel.id),
-                ("gateway_channel_token", "=", token),
-            ],
-            limit=1,
+            ]
         )
 
     def _second_wa_message(self):
         """A second message from the same WhatsApp number."""
-        second_message = dict(self.wa_message)
+        second_message = deepcopy(self.wa_message)
         second_message["entry"][0]["changes"][0]["value"]["messages"] = [
             {
                 "from": "34600000000",
@@ -163,68 +159,78 @@ class TestLivechatWhatsapp(HttpCase):
         ]
         return second_message
 
-    def test_inbound_creates_two_channels(self):
-        """Incoming WhatsApp messages create a gateway (bot) channel and a
-        mirrored livechat conversation channel."""
+    def test_inbound_creates_single_gateway_channel(self):
+        """Incoming WhatsApp messages create a single gateway channel and no
+        separate livechat conversation."""
         self._setup_webhook()
         self._send_webhook_message(self.wa_message)
-        gateway_channel = self._gateway_channel(self.gateway)
-        conversation = self._conversation_channel(self.livechat_channel, "34600000000")
-        self.assertTrue(gateway_channel, "A gateway channel should exist")
-        self.assertTrue(conversation, "A livechat conversation should exist")
-        self.assertEqual(conversation.livechat_channel_id, self.livechat_channel)
-        self.assertTrue(conversation.livechat_active)
-        self.assertEqual(conversation.gateway_channel_token, "34600000000")
-        self.assertTrue(conversation.message_ids)
-        bodies = [m.body or "" for m in conversation.message_ids]
+        channels = self._gateway_channels()
+        self.assertEqual(len(channels), 1, "A single gateway channel should exist")
+        channel = channels
+        self.assertEqual(channel.gateway_channel_token, "34600000000")
+        self.assertEqual(channel.livechat_channel_id, self.livechat_channel)
+        self.assertEqual(channel.name, "Test Visitor")
+        self.assertEqual(channel.anonymous_name, "Test Visitor")
+        self.assertTrue(channel.message_ids)
+        bodies = [m.body or "" for m in channel.message_ids]
         self.assertTrue(
             any("Hello from WhatsApp" in body for body in bodies),
-            "Message should be mirrored in the livechat conversation",
+            "The inbound message should be stored on the gateway channel",
         )
+        conversations = self.env["discuss.channel"].search(
+            [("channel_type", "=", "livechat")]
+        )
+        self.assertFalse(conversations, "No livechat conversation should be created")
 
     def test_inbound_operator_assigned(self):
-        """The operator should be assigned from the livechat channel."""
+        """The operator configured on the linked livechat channel is stored on
+        the gateway channel."""
         self._setup_webhook()
         self._send_webhook_message(self.wa_message)
-        conversation = self._conversation_channel(self.livechat_channel, "34600000000")
+        channel = self._gateway_channels()
         self.assertEqual(
-            conversation.livechat_operator_id,
+            channel.livechat_operator_id,
             self.operator_user.partner_id,
         )
+        self.assertIn(
+            self.operator_user.partner_id,
+            channel.channel_member_ids.partner_id,
+        )
+        self.assertIn(
+            self.admin_user.partner_id,
+            channel.channel_member_ids.partner_id,
+        )
+
+    def test_inbound_registered_contact_uses_partner_name(self):
+        """A contact registered in Odoo is displayed with its Odoo name."""
+        partner = self.env["res.partner"].create(
+            {"name": "Registered Contact", "phone": "+34600000000"}
+        )
+        self._setup_webhook()
+        self._send_webhook_message(self.wa_message)
+        channel = self._gateway_channels()
+        self.assertEqual(channel.name, partner.name)
+        self.assertIn(partner, channel.channel_member_ids.partner_id)
 
     def test_inbound_channel_reuse(self):
-        """Subsequent messages from the same phone should reuse both channels."""
+        """Subsequent messages from the same phone reuse the gateway channel."""
         self._setup_webhook()
         self._send_webhook_message(self.wa_message)
-        gateway_channel_1 = self._gateway_channel(self.gateway)
-        conversation_1 = self._conversation_channel(self.livechat_channel, "34600000000")
-        # Send another message from the same number
+        channel_1 = self._gateway_channels()
         self._send_webhook_message(self._second_wa_message())
-        gateway_channel = self.env["discuss.channel"].search(
-            [
-                ("gateway_id", "=", self.gateway.id),
-                ("channel_type", "=", "gateway"),
-            ]
+        channels = self._gateway_channels()
+        self.assertEqual(len(channels), 1, "Should reuse the gateway channel")
+        self.assertEqual(channels, channel_1)
+        conversations = self.env["discuss.channel"].search(
+            [("channel_type", "=", "livechat")]
         )
-        conversation = self.env["discuss.channel"].search(
-            [
-                ("channel_type", "=", "livechat"),
-                ("livechat_channel_id", "=", self.livechat_channel.id),
-                ("gateway_channel_token", "=", "34600000000"),
-            ]
-        )
-        self.assertEqual(len(gateway_channel), 1, "Should reuse gateway channel")
-        self.assertEqual(len(conversation), 1, "Should reuse livechat conversation")
-        self.assertEqual(gateway_channel, gateway_channel_1)
-        self.assertEqual(conversation, conversation_1)
+        self.assertFalse(conversations, "No livechat conversation should be created")
 
     def test_outbound_sends_via_whatsapp_once(self):
-        """Operator replies on the livechat conversation are sent through
-        WhatsApp exactly once and mirrored into the bot channel."""
+        """A reply on the gateway channel is sent through WhatsApp once."""
         self._setup_webhook()
         self._send_webhook_message(self.wa_message)
-        conversation = self._conversation_channel(self.livechat_channel, "34600000000")
-        gateway_channel = self._gateway_channel(self.gateway)
+        channel = self._gateway_channels()
         with patch("requests.post") as post_mock:
             response_mock = MagicMock()
             response_mock.status_code = 200
@@ -232,7 +238,7 @@ class TestLivechatWhatsapp(HttpCase):
                 "messages": [{"id": "wamid.OUTBOUND123"}]
             }
             post_mock.return_value = response_mock
-            message = conversation.with_user(self.operator_user).message_post(
+            message = channel.with_user(self.operator_user).message_post(
                 body="Hello from operator",
                 message_type="comment",
             )
@@ -242,29 +248,18 @@ class TestLivechatWhatsapp(HttpCase):
             )
             notification = self.env["mail.notification"].search(
                 [
-                    ("gateway_channel_id", "=", gateway_channel.id),
+                    ("gateway_channel_id", "=", channel.id),
                     ("mail_message_id", "=", message.id),
                 ]
             )
             self.assertTrue(notification, "A gateway notification should exist")
             self.assertEqual(notification.gateway_message_id, "wamid.OUTBOUND123")
-        bodies = [m.body or "" for m in gateway_channel.message_ids]
-        self.assertTrue(
-            any("Hello from operator" in body for body in bodies),
-            "Reply should be mirrored into the bot channel",
-        )
 
-    def test_admin_gateway_post_not_sent(self):
-        """Messages posted on the bot channel are not sent via WhatsApp: only
-        livechat operators send messages."""
-        self._setup_webhook()
-        self._send_webhook_message(self.wa_message)
-        gateway_channel = self._gateway_channel(self.gateway)
+    def test_inbound_message_not_sent_back(self):
+        """Incoming messages are stored but never echoed back to WhatsApp."""
         with patch("requests.post") as post_mock:
-            gateway_channel.with_user(self.admin_user).message_post(
-                body="Admin note",
-                message_type="comment",
-            )
+            self._setup_webhook()
+            self._send_webhook_message(self.wa_message)
             post_mock.assert_not_called()
 
     def test_default_gateway_without_livechat(self):
@@ -291,19 +286,18 @@ class TestLivechatWhatsapp(HttpCase):
             f"&hub.challenge=22",
         )
         self._send_webhook_message(self.wa_message, gateway=plain_gateway)
-        channel = self.env["discuss.channel"].search(
-            [("gateway_id", "=", plain_gateway.id)]
-        )
+        channel = self._gateway_channels(plain_gateway)
         self.assertTrue(channel)
         self.assertEqual(channel.channel_type, "gateway")
-        conversation = self.env["discuss.channel"].search(
+        self.assertFalse(channel.livechat_channel_id)
+        conversations = self.env["discuss.channel"].search(
             [("channel_type", "=", "livechat")]
         )
-        self.assertFalse(conversation)
+        self.assertFalse(conversations)
 
-    def test_preexisting_gateway_channel_gets_livechat_partner(self):
-        """An existing gateway conversation gets a livechat peer when the
-        gateway is later linked to a livechat channel."""
+    def test_preexisting_gateway_channel_reused_after_livechat_link(self):
+        """When a gateway is linked to a livechat channel after a conversation
+        already exists, that same gateway channel is reused."""
         plain_gateway = self.env["mail.gateway"].create(
             {
                 "name": "Pre WA",
@@ -325,24 +319,21 @@ class TestLivechatWhatsapp(HttpCase):
             f"&hub.challenge=22",
         )
         self._send_webhook_message(self.wa_message, gateway=plain_gateway)
-        gateway_channel = self.env["discuss.channel"].search(
-            [("gateway_id", "=", plain_gateway.id)]
-        )
-        self.assertTrue(gateway_channel)
-        self.assertEqual(gateway_channel.channel_type, "gateway")
+        channel = self._gateway_channels(plain_gateway)
+        self.assertTrue(channel)
+        self.assertEqual(channel.channel_type, "gateway")
         # Link the gateway to a livechat channel now
-        livechat_channel = self.env["im_livechat.channel"].create(
+        self.env["im_livechat.channel"].create(
             {
                 "name": "WhatsApp Support 2",
                 "user_ids": [(4, self.operator_user.id)],
                 "whatsapp_gateway_id": plain_gateway.id,
             }
         )
-        # A new message from the same number should create the conversation peer
         self._send_webhook_message(self._second_wa_message(), gateway=plain_gateway)
-        conversation = self._conversation_channel(livechat_channel, "34600000000")
-        self.assertTrue(conversation, "Livechat peer should be created")
-        gateway_channels = self.env["discuss.channel"].search(
-            [("gateway_id", "=", plain_gateway.id)]
+        channels = self._gateway_channels(plain_gateway)
+        self.assertEqual(len(channels), 1, "Gateway channel should be reused")
+        conversations = self.env["discuss.channel"].search(
+            [("channel_type", "=", "livechat")]
         )
-        self.assertEqual(len(gateway_channels), 1, "Gateway channel should be reused")
+        self.assertFalse(conversations, "No livechat conversation should be created")
