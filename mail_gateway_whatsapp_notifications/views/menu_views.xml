@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_whatsapp_notification"
+        name="Notificações"
+        parent="mail_gateway_whatsapp_messages.menu_mail_whatsapp_messages_root"
+        action="whatsapp_notification_action"
+        sequence="20"
+        groups="mail_gateway.gateway_user"
+    />
+    <menuitem
+        id="menu_whatsapp_notification_rule"
+        name="Regras de Notificação"
+        parent="mail_gateway_whatsapp_messages.menu_mail_whatsapp_messages_root"
+        action="whatsapp_notification_rule_action"
+        sequence="21"
+        groups="base.group_system"
+    />
+</odoo>

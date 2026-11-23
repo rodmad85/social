@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_whatsapp_notification_rule_user,whatsapp.notification.rule.user,model_whatsapp_notification_rule,base.group_user,1,0,0,0
+access_whatsapp_notification_rule_gateway,whatsapp.notification.rule.gateway,model_whatsapp_notification_rule,mail_gateway.gateway_user,1,0,0,0
+access_whatsapp_notification_rule_admin,whatsapp.notification.rule.admin,model_whatsapp_notification_rule,base.group_system,1,1,1,1
+access_whatsapp_notification_user,whatsapp.notification.user,model_whatsapp_notification,base.group_user,1,0,1,0
+access_whatsapp_notification_gateway,whatsapp.notification.gateway,model_whatsapp_notification,mail_gateway.gateway_user,1,1,1,0
+access_whatsapp_notification_admin,whatsapp.notification.admin,model_whatsapp_notification,base.group_system,1,1,1,1

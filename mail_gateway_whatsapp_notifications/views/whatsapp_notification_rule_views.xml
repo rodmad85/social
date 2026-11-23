@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="whatsapp_notification_rule_view_list" model="ir.ui.view">
+        <field name="name">whatsapp.notification.rule.view.list</field>
+        <field name="model">whatsapp.notification.rule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="event_key" />
+                <field name="model_id" />
+                <field name="template_id" />
+                <field name="auto_schedule" />
+                <field name="active" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_rule_view_form" model="ir.ui.view">
+        <field name="name">whatsapp.notification.rule.view.form</field>
+        <field name="model">whatsapp.notification.rule</field>
+        <field name="arch" type="xml">
+            <form string="Notification Rule">
+                <header>
+                    <button
+                        name="action_schedule"
+                        type="object"
+                        string="Schedule Now"
+                        class="oe_highlight"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field
+                                name="name"
+                                placeholder="e.g. Appointment confirmation"
+                            />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="definition" string="Definition">
+                            <field name="active" invisible="1" />
+                            <field name="event_key" />
+                            <field name="model_id" />
+                            <field name="model" invisible="1" />
+                            <field name="template_id" />
+                            <field name="gateway_id" />
+                            <field name="sequence" />
+                        </group>
+                        <group name="scheduling" string="Scheduling">
+                            <field name="recipient_field" />
+                            <field name="phone_field" />
+                            <field name="date_field" />
+                            <field name="offset_days" />
+                            <field name="offset_hours" />
+                            <field name="auto_schedule" />
+                            <field name="domain" invisible="not auto_schedule" />
+                            <field name="max_records" invisible="not auto_schedule" />
+                            <field name="max_retries" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Scheduled Notifications" name="notifications">
+                            <field name="notification_ids" readonly="1">
+                                <list>
+                                    <field name="scheduled_date" />
+                                    <field name="partner_id" />
+                                    <field name="state" />
+                                    <field name="sent_date" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_rule_view_search" model="ir.ui.view">
+        <field name="name">whatsapp.notification.rule.view.search</field>
+        <field name="model">whatsapp.notification.rule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="event_key" />
+                <field name="model_id" />
+                <filter
+                    name="active"
+                    string="Active"
+                    domain="[('active', '=', True)]"
+                />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_rule_action" model="ir.actions.act_window">
+        <field name="name">Notification Rules</field>
+        <field name="res_model">whatsapp.notification.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="whatsapp_notification_rule_view_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a notification rule
+            </p>
+            <p>
+                Bind an approved WhatsApp template to any Odoo model and decide
+                when the message should be sent.
+            </p>
+        </field>
+    </record>
+</odoo>

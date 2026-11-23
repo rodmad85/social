@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="whatsapp_notification_view_list" model="ir.ui.view">
+        <field name="name">whatsapp.notification.view.list</field>
+        <field name="model">whatsapp.notification</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="scheduled_date" />
+                <field name="partner_id" />
+                <field name="template_id" />
+                <field name="event_key" />
+                <field name="res_model" />
+                <field name="state" />
+                <field name="sent_date" />
+                <field name="retry_count" />
+            </list>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_view_form" model="ir.ui.view">
+        <field name="name">whatsapp.notification.view.form</field>
+        <field name="model">whatsapp.notification</field>
+        <field name="arch" type="xml">
+            <form string="Scheduled Notification">
+                <header>
+                    <button
+                        name="action_send_now"
+                        type="object"
+                        string="Send Now"
+                        class="oe_highlight"
+                        invisible="state == 'sent'"
+                    />
+                    <button
+                        name="action_reset"
+                        type="object"
+                        string="Reset"
+                        invisible="state != 'error'"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state in ['sent', 'cancelled']"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="delivery" string="Delivery">
+                            <field name="scheduled_date" />
+                            <field name="partner_id" />
+                            <field name="phone" />
+                            <field name="phone_field" invisible="1" />
+                            <field name="template_id" />
+                            <field name="gateway_id" />
+                        </group>
+                        <group name="source" string="Source">
+                            <field name="event_key" />
+                            <field name="rule_id" />
+                            <field name="res_model" />
+                            <field name="res_id" />
+                            <field name="record_name" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                    <group name="result" string="Result">
+                        <field name="sent_date" />
+                        <field name="message_id" />
+                        <field name="retry_count" />
+                        <field name="error_message" invisible="not error_message" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_view_search" model="ir.ui.view">
+        <field name="name">whatsapp.notification.view.search</field>
+        <field name="model">whatsapp.notification</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="event_key" />
+                <field name="partner_id" />
+                <field name="res_model" />
+                <filter
+                    name="pending"
+                    string="Pending"
+                    domain="[('state', '=', 'pending')]"
+                />
+                <filter name="sent" string="Sent" domain="[('state', '=', 'sent')]" />
+                <filter
+                    name="error"
+                    string="Error"
+                    domain="[('state', '=', 'error')]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="whatsapp_notification_action" model="ir.actions.act_window">
+        <field name="name">Notificações</field>
+        <field name="res_model">whatsapp.notification</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="whatsapp_notification_view_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No scheduled WhatsApp notifications
+            </p>
+            <p>
+                Notifications are queued here by the configured rules and sent
+                by the scheduled action.
+            </p>
+        </field>
+    </record>
+</odoo>
